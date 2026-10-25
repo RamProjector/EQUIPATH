@@ -66,6 +66,14 @@ jobs:
           DB_NAME: equipath_eteeap
         run: php tests/php/database_integration.php
 
+      - name: Run authentication integration tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: equipath_eteeap
+        run: php tests/php/authentication_integration.php
+
   desktop-build:
     name: C# WinForms build
     runs-on: windows-latest
