@@ -58,6 +58,11 @@ jobs:
           MYSQL_PWD: root
         run: mysql --host=127.0.0.1 --user=root equipath_eteeap < database/migrations/001_initial_schema.sql
 
+      - name: Apply authentication rate-limit migration
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --user=root equipath_eteeap < database/migrations/002_authentication_rate_limits.sql
+
       - name: Run database integrity integration tests
         env:
           DB_HOST: 127.0.0.1
