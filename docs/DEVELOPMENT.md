@@ -2,7 +2,7 @@
 
 ## Current status
 
-This is an early foundation, not a complete application. It includes the public landing page, a deliberately limited API health endpoint, a supplementary WinForms API-connectivity screen, and an initial relational database migration. Only a minimal database-backed credential verifier and isolated secure-session primitives have been added for testing. A complete HTTP login/logout flow, login throttling, role/resource authorization middleware, database-backed application APIs, document upload/download, evaluation workflows, accreditation decision enforcement, notifications, and registrar integration are not implemented yet.
+This is an early foundation, not a complete application. It includes the public landing page, a deliberately limited API health endpoint, a supplementary WinForms API-connectivity screen, and an initial relational database migration. Only a minimal database-backed credential verifier and isolated secure-session primitives have been added for testing. A complete role/resource authorization middleware, database-backed application APIs, document upload/download, evaluation workflows, accreditation decision enforcement, notifications, and registrar integration are not implemented yet.
 
 Do not use real applicant records or portfolio documents in this scaffold.
 
@@ -11,10 +11,10 @@ Do not use real applicant records or portfolio documents in this scaffold.
 1. Install a current XAMPP distribution with PHP and MySQL/MariaDB.
 2. Copy the repository's web directory to xampp/htdocs/equipath.
 3. Start Apache and MySQL in the XAMPP Control Panel.
-4. Create a fresh development database, then import database/migrations/001_initial_schema.sql using phpMyAdmin's Import tab.
+4. Create a fresh development database, then import database/migrations/001_initial_schema.sql followed by database/migrations/002_authentication_rate_limits.sql using phpMyAdmin's Import tab.
 5. Open http://localhost/equipath/public/ and check http://localhost/equipath/api/health.php.
 
-The migration creates the equipath_eteeap database if it does not exist, then creates 23 relational tables. It contains no DROP statements or seed users. Apply it only to a fresh development database. A migration file is not a backup or a production migration plan; schema upgrades must be versioned and reviewed.
+Migration 001 creates the equipath_eteeap database if it does not exist and creates 23 core relational tables. Migration 002 adds the authentication rate-limit table. Neither migration seeds users or contains DROP statements. Apply migration 001 only to a fresh development database, then apply later migrations in order. A migration file is not a backup or a production migration plan; schema upgrades must be versioned and reviewed.
 
 The health endpoint deliberately returns database: not_checked; it does not connect to the database. Do not interpret a healthy HTTP response as proof that MySQL is configured or reachable.
 
@@ -44,7 +44,7 @@ The initial schema covers configurable program requirements and approved credit 
 
 Before enabling a workflow, add tests for the corresponding behavior:
 
-- Authentication: credential-verifier tests cover valid/invalid credentials, pending/disabled accounts, unknown email, empty input, and safe return values. Session security primitives now cover session ID rotation, minimized identity storage, CSRF token validation, and session destruction. Still required: HTTP login/logout endpoints, password reset, login throttling, role/resource authorization, and operational recovery.
+- Authentication: credential-verifier tests cover valid/invalid credentials, pending/disabled accounts, unknown email, empty input, and safe return values. Session security primitives now cover session ID rotation, minimized identity storage, CSRF token validation, and session destruction. Still required: password reset, role/resource authorization, comprehensive endpoint tests, and operational recovery. HTTP authentication endpoints and database-backed login throttling are present as a development foundation but must not be treated as production-ready until reviewed and tested end-to-end.
 - Authorization: every protected endpoint denied by default; applicant cannot read another applicant's files; evaluators see only assigned cases; registrar and approver permissions remain distinct; administrator cannot silently approve academic outcomes.
 - Input and SQL: prepared statements; malformed IDs and payloads; server-side validation; invalid state transitions; duplicate submissions and concurrency.
 - Evidence uploads: extension/MIME/content checks, size limits, randomized storage names, storage outside the public web root, path traversal rejection, access checks on download.
