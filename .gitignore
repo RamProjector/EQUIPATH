@@ -1,0 +1,21 @@
+# Local secrets and configuration
+.env
+.env.*
+!.env.example
+web/config/local.php
+
+# PHP tooling
+/vendor/
+/.phpunit.cache/
+
+# .NET and Visual Studio
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+
+# Logs and local uploaded evidence
+*.log
+web/storage/uploads/*
+!web/storage/uploads/.gitkeep

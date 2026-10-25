@@ -1,0 +1,52 @@
+name: EquiPath CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  php-quality:
+    name: PHP syntax and smoke tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Check PHP syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t php_files < <(find web tests/php -type f -name '*.php' -print)
+          test "${#php_files[@]}" -gt 0
+          for file in "${php_files[@]}"; do
+            php -l "$file"
+          done
+
+      - name: Run dependency-free PHP smoke tests
+        run: php tests/php/run.php
+
+  desktop-build:
+    name: C# WinForms build
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build desktop client
+        run: dotnet build desktop/EquiPath.Desktop.csproj --configuration Release
