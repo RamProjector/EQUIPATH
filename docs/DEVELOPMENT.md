@@ -14,7 +14,7 @@ Do not use real applicant records or portfolio documents in this scaffold.
 4. Create a fresh development database, then import database/migrations/001_initial_schema.sql using phpMyAdmin's Import tab.
 5. Open http://localhost/equipath/public/ and check http://localhost/equipath/api/health.php.
 
-The migration creates the equipath_eteeap database if it does not exist, then creates 21 relational tables. It contains no DROP statements or seed users. Apply it only to a fresh development database. A migration file is not a backup or a production migration plan; schema upgrades must be versioned and reviewed.
+The migration creates the equipath_eteeap database if it does not exist, then creates 23 relational tables. It contains no DROP statements or seed users. Apply it only to a fresh development database. A migration file is not a backup or a production migration plan; schema upgrades must be versioned and reviewed.
 
 The health endpoint deliberately returns database: not_checked; it does not connect to the database. Do not interpret a healthy HTTP response as proof that MySQL is configured or reachable.
 
@@ -38,7 +38,7 @@ From the repository root:
 
 For database integration tests, apply the migration to a disposable MySQL 8.4 database and set DB_HOST, DB_USER, DB_PASSWORD, and DB_NAME before running php tests/php/database_integration.php. CI provisions an isolated MySQL service, applies the migration, and runs these checks automatically.
 
-The current database tests check table creation, unique email enforcement, and rejection of invalid foreign-key references. They do not prove every workflow, authorization rule, concurrency case, backup, or restoration scenario.
+The initial schema covers configurable program requirements and approved credit records as well as application workflow data. The current database tests check table creation, unique email enforcement, and rejection of invalid foreign-key references. They do not prove every workflow, authorization rule, concurrency case, backup, or restoration scenario.
 
 ## Important test gates before real use
 
