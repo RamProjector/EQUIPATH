@@ -2,7 +2,7 @@
 
 ## Current status
 
-This is an early foundation, not a complete application. It includes the public landing page, a deliberately limited API health endpoint, a supplementary WinForms API-connectivity screen, and an initial relational database migration. Only a minimal database-backed credential verifier has been added for testing. HTTP login/session handling, session rotation, CSRF protection, login throttling, authorization middleware, database-backed application APIs, document upload/download, evaluation workflows, accreditation decision enforcement, notifications, and registrar integration are not implemented yet.
+This is an early foundation, not a complete application. It includes the public landing page, a deliberately limited API health endpoint, a supplementary WinForms API-connectivity screen, and an initial relational database migration. Only a minimal database-backed credential verifier and isolated secure-session primitives have been added for testing. A complete HTTP login/logout flow, login throttling, role/resource authorization middleware, database-backed application APIs, document upload/download, evaluation workflows, accreditation decision enforcement, notifications, and registrar integration are not implemented yet.
 
 Do not use real applicant records or portfolio documents in this scaffold.
 
@@ -44,7 +44,7 @@ The initial schema covers configurable program requirements and approved credit 
 
 Before enabling a workflow, add tests for the corresponding behavior:
 
-- Authentication: a minimal credential-verifier test now covers valid/invalid credentials, pending/disabled accounts, unknown email, empty input, and safe return values. Still required: HTTP login flow, password reset, session rotation, secure cookie settings, logout, CSRF protection, login throttling, and operational recovery.
+- Authentication: credential-verifier tests cover valid/invalid credentials, pending/disabled accounts, unknown email, empty input, and safe return values. Session security primitives now cover session ID rotation, minimized identity storage, CSRF token validation, and session destruction. Still required: HTTP login/logout endpoints, password reset, login throttling, role/resource authorization, and operational recovery.
 - Authorization: every protected endpoint denied by default; applicant cannot read another applicant's files; evaluators see only assigned cases; registrar and approver permissions remain distinct; administrator cannot silently approve academic outcomes.
 - Input and SQL: prepared statements; malformed IDs and payloads; server-side validation; invalid state transitions; duplicate submissions and concurrency.
 - Evidence uploads: extension/MIME/content checks, size limits, randomized storage names, storage outside the public web root, path traversal rejection, access checks on download.
