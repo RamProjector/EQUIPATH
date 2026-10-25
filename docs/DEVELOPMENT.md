@@ -2,7 +2,7 @@
 
 ## Current status
 
-This is an early foundation, not a complete application. It includes the public landing page, a deliberately limited API health endpoint, a supplementary WinForms API-connectivity screen, and an initial relational database migration. Only a minimal database-backed credential verifier and isolated secure-session primitives have been added for testing. A complete role/resource authorization middleware, database-backed application APIs, document upload/download, evaluation workflows, accreditation decision enforcement, notifications, and registrar integration are not implemented yet.
+This is an early foundation, not a complete application. It includes the public landing page, a deliberately limited API health endpoint, a supplementary WinForms API-connectivity screen, relational database migrations, credential verification, HTTP session endpoints, login throttling, and server-side authorization primitives. Application APIs, document upload/download, evaluation workflows, accreditation decision enforcement, notifications, and registrar integration are not implemented yet.
 
 Do not use real applicant records or portfolio documents in this scaffold.
 
@@ -35,9 +35,9 @@ From the repository root:
     php -l web/public/index.php
     php tests/php/run.php
     php tests/php/schema_contract.php
-    php tests/php/session_security.php
+    php tests/php/session_security.php\n    php tests/php/authorization_integration.php
 
-For database integration tests, apply migrations 001 and 002 to a disposable MySQL 8.4 database and set DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, and a random AUTH_RATE_LIMIT_SECRET of at least 32 characters. CI provisions an isolated MySQL service, applies both migrations, and runs database, authentication, and login-throttling tests automatically.
+For database integration tests, apply migrations 001 and 002 to a disposable MySQL 8.4 database and set DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, and a random AUTH_RATE_LIMIT_SECRET of at least 32 characters. CI provisions an isolated MySQL service, applies both migrations, and runs database, authentication, authorization, session-security, and login-throttling tests automatically.
 
 The initial schema covers configurable program requirements and approved credit records as well as application workflow data. The current database tests check table creation, unique email enforcement, and rejection of invalid foreign-key references. Authentication integration tests verify valid active-account credentials, wrong passwords, unknown email addresses, pending/disabled accounts, empty inputs, safe return values, and successful-login timestamps. They do not prove every workflow, authorization rule, concurrency case, backup, or restoration scenario.
 
@@ -46,7 +46,7 @@ The initial schema covers configurable program requirements and approved credit 
 Before enabling a workflow, add tests for the corresponding behavior:
 
 - Authentication: credential-verifier tests cover valid/invalid credentials, pending/disabled accounts, unknown email, empty input, and safe return values. Session security primitives now cover session ID rotation, minimized identity storage, CSRF token validation, and session destruction. Still required: password reset, role/resource authorization, comprehensive endpoint tests, and operational recovery. HTTP authentication endpoints and database-backed login throttling are present as a development foundation but must not be treated as production-ready until reviewed and tested end-to-end.
-- Authorization: every protected endpoint denied by default; applicant cannot read another applicant's files; evaluators see only assigned cases; registrar and approver permissions remain distinct; administrator cannot silently approve academic outcomes.
+- Authorization: `AccessControl` rechecks active account status and database-backed role membership at decision time. Applicants are restricted to their own applications; evaluators require a current assignment; other staff roles must be explicitly allow-listed by the calling endpoint. Administrator access is not implicit. These primitives are not yet wired into business endpoints, so do not expose protected workflows until every endpoint calls the appropriate policy and has endpoint-level tests.
 - Input and SQL: prepared statements; malformed IDs and payloads; server-side validation; invalid state transitions; duplicate submissions and concurrency.
 - Evidence uploads: extension/MIME/content checks, size limits, randomized storage names, storage outside the public web root, path traversal rejection, access checks on download.
 - Evaluation and decisions: rubric score bounds, required feedback, assignment constraints, approval provenance, immutable or versioned decision history.
@@ -57,4 +57,4 @@ Before enabling a workflow, add tests for the corresponding behavior:
 
 ## CI
 
-GitHub Actions runs PHP syntax and smoke tests, validates the schema contract, applies the migration to a clean MySQL 8.4 service, runs database integrity and credential-verifier tests, and builds the WinForms project on Windows. Green CI is a required quality gate, not proof that the system is production-ready.
+GitHub Actions runs PHP syntax and smoke tests, validates the schema contract, applies both migrations to a clean MySQL 8.4 service, runs database integrity, credential-verifier, authorization, session-security, and login-throttling tests, and builds the WinForms project on Windows. Green CI is a required quality gate, not proof that the system is production-ready.
