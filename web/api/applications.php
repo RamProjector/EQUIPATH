@@ -34,7 +34,7 @@ try {
         $statement = $db->prepare(
             'SELECT a.application_id, a.application_number, a.application_status,
                     a.submitted_at, a.created_at, a.updated_at, p.program_code, p.program_name,
-                    'applicant' AS access_type
+                    \'applicant\' AS access_type
              FROM applications a
              INNER JOIN academic_programs p ON p.program_id = a.program_id
              WHERE a.applicant_user_id = ?
