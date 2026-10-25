@@ -154,7 +154,27 @@ try {
         'User without a role was authorized.'
     );
 
-    fwrite(STDOUT, "PASS: authorization integration checks (applicant ownership, evaluator assignment, explicit staff allow-list, no implicit administrator access).\n");
+    // Exercise the actual HTTP listing endpoint under a simulated signed-in session.
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_SESSION['user_id'] = $userIds['applicant'];
+    $runApplicationsEndpoint = static function (): string {
+        ob_start();
+        require dirname(__DIR__, 2) . '/web/api/applications.php';
+        return (string) ob_get_clean();
+    };
+    $endpointPayload = json_decode($runApplicationsEndpoint(), true, 16, JSON_THROW_ON_ERROR);
+    if (($endpointPayload['ok'] ?? false) !== true || !is_array($endpointPayload['applications'] ?? null)) {
+        throw new RuntimeException('Applications endpoint did not return a successful response for an authenticated applicant.');
+    }
+    $endpointIds = array_column($endpointPayload['applications'], 'application_id');
+    if (!in_array($applicationIds['applicant'], $endpointIds, true)) {
+        throw new RuntimeException('Applications endpoint omitted the signed-in applicant application.');
+    }
+    if (in_array($applicationIds['other'], $endpointIds, true)) {
+        throw new RuntimeException('Applications endpoint exposed another applicant application.');
+    }
+
+    fwrite(STDOUT, "PASS: authorization integration checks (ownership, evaluator assignment, explicit staff allow-list, no implicit administrator access, protected listing endpoint).\\n");
 } catch (Throwable $error) {
     fwrite(STDERR, 'FAIL: authorization integration checks — ' . $error->getMessage() . "\n");
     exit(1);
