@@ -47,7 +47,7 @@ final class LoginRateLimiter
                     blocked_until = IF(
                         window_started_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 15 MINUTE),
                         NULL,
-                        IF(attempt_count + 1 >= 8, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 15 MINUTE), blocked_until)
+                        IF(attempt_count >= 8, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 15 MINUTE), blocked_until)
                     ),
                     window_started_at = IF(window_started_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 15 MINUTE), CURRENT_TIMESTAMP, window_started_at)'
             );
