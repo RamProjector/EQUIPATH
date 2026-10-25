@@ -16,7 +16,7 @@ Do not use real applicant records or portfolio documents in this scaffold.
 
 Migration 001 creates the equipath_eteeap database if it does not exist and creates 23 core relational tables. Migration 002 adds the authentication rate-limit table. Neither migration seeds users or contains DROP statements. Apply migration 001 only to a fresh development database, then apply later migrations in order. A migration file is not a backup or a production migration plan; schema upgrades must be versioned and reviewed.
 
-The health endpoint deliberately returns database: not_checked; it does not connect to the database. Do not interpret a healthy HTTP response as proof that MySQL is configured or reachable.
+Configure DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, and a random AUTH_RATE_LIMIT_SECRET (at least 32 characters) in the PHP process environment before using the authentication endpoints. Keep these values out of source control and use a least-privilege database account. The CSRF bootstrap endpoint is GET /api/csrf.php; submit JSON credentials by POST to /api/authenticate.php with the returned token in the X-CSRF-Token header; POST to /api/logout.php with the current CSRF token to sign out. Enforce HTTPS in deployed environments. The health endpoint deliberately returns database: not_checked; it does not connect to the database. Do not interpret a healthy HTTP response as proof that MySQL is configured or reachable.
 
 ## Desktop stack (supplementary)
 
@@ -35,8 +35,9 @@ From the repository root:
     php -l web/public/index.php
     php tests/php/run.php
     php tests/php/schema_contract.php
+    php tests/php/session_security.php
 
-For database integration tests, apply the migration to a disposable MySQL 8.4 database and set DB_HOST, DB_USER, DB_PASSWORD, and DB_NAME before running php tests/php/database_integration.php. CI provisions an isolated MySQL service, applies the migration, and runs these checks automatically.
+For database integration tests, apply migrations 001 and 002 to a disposable MySQL 8.4 database and set DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, and a random AUTH_RATE_LIMIT_SECRET of at least 32 characters. CI provisions an isolated MySQL service, applies both migrations, and runs database, authentication, and login-throttling tests automatically.
 
 The initial schema covers configurable program requirements and approved credit records as well as application workflow data. The current database tests check table creation, unique email enforcement, and rejection of invalid foreign-key references. Authentication integration tests verify valid active-account credentials, wrong passwords, unknown email addresses, pending/disabled accounts, empty inputs, safe return values, and successful-login timestamps. They do not prove every workflow, authorization rule, concurrency case, backup, or restoration scenario.
 
