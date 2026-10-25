@@ -11,8 +11,21 @@ permissions:
 
 jobs:
   php-quality:
-    name: PHP syntax and smoke tests
+    name: PHP syntax, smoke tests, and MySQL integration
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: equipath_eteeap
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -21,6 +34,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
+          extensions: mysqli
           coverage: none
 
       - name: Check PHP syntax
@@ -33,8 +47,32 @@ jobs:
             php -l "$file"
           done
 
-      - name: Run dependency-free PHP smoke tests
+      - name: Run PHP smoke tests
         run: php tests/php/run.php
+
+      - name: Check database schema safety contract
+        run: php tests/php/schema_contract.php
+
+      - name: Apply initial schema to clean MySQL service
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --user=root equipath_eteeap < database/migrations/001_initial_schema.sql
+
+      - name: Run database integrity integration tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: equipath_eteeap
+        run: php tests/php/database_integration.php
+
+      - name: Run authentication integration tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: equipath_eteeap
+        run: php tests/php/authentication_integration.php
 
   desktop-build:
     name: C# WinForms build
