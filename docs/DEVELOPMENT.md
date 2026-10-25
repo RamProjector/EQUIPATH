@@ -2,7 +2,7 @@
 
 ## Current status
 
-This is an early foundation, not a complete application. It includes the public landing page, a deliberately limited API health endpoint, a supplementary WinForms API-connectivity screen, and an initial relational database migration. Only a minimal database-backed credential verifier has been added for testing. HTTP login/session handling, session rotation, CSRF protection, login throttling, authorization middleware, database-backed application APIs, document upload/download, evaluation workflows, accreditation decision enforcement, notifications, and registrar integration are not implemented yet.
+This is an early foundation, not a complete application. It includes the public landing page, a deliberately limited API health endpoint, a supplementary WinForms API-connectivity screen, and an initial relational database migration. Only a minimal database-backed credential verifier and isolated secure-session primitives have been added for testing. A complete role/resource authorization middleware, database-backed application APIs, document upload/download, evaluation workflows, accreditation decision enforcement, notifications, and registrar integration are not implemented yet.
 
 Do not use real applicant records or portfolio documents in this scaffold.
 
@@ -11,12 +11,12 @@ Do not use real applicant records or portfolio documents in this scaffold.
 1. Install a current XAMPP distribution with PHP and MySQL/MariaDB.
 2. Copy the repository's web directory to xampp/htdocs/equipath.
 3. Start Apache and MySQL in the XAMPP Control Panel.
-4. Create a fresh development database, then import database/migrations/001_initial_schema.sql using phpMyAdmin's Import tab.
+4. Create a fresh development database, then import database/migrations/001_initial_schema.sql followed by database/migrations/002_authentication_rate_limits.sql using phpMyAdmin's Import tab.
 5. Open http://localhost/equipath/public/ and check http://localhost/equipath/api/health.php.
 
-The migration creates the equipath_eteeap database if it does not exist, then creates 23 relational tables. It contains no DROP statements or seed users. Apply it only to a fresh development database. A migration file is not a backup or a production migration plan; schema upgrades must be versioned and reviewed.
+Migration 001 creates the equipath_eteeap database if it does not exist and creates 23 core relational tables. Migration 002 adds the authentication rate-limit table. Neither migration seeds users or contains DROP statements. Apply migration 001 only to a fresh development database, then apply later migrations in order. A migration file is not a backup or a production migration plan; schema upgrades must be versioned and reviewed.
 
-The health endpoint deliberately returns database: not_checked; it does not connect to the database. Do not interpret a healthy HTTP response as proof that MySQL is configured or reachable.
+Configure DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, and a random AUTH_RATE_LIMIT_SECRET (at least 32 characters) in the PHP process environment before using the authentication endpoints. Keep these values out of source control and use a least-privilege database account. The CSRF bootstrap endpoint is GET /api/csrf.php; submit JSON credentials by POST to /api/authenticate.php with the returned token in the X-CSRF-Token header; POST to /api/logout.php with the current CSRF token to sign out. Enforce HTTPS in deployed environments. The health endpoint deliberately returns database: not_checked; it does not connect to the database. Do not interpret a healthy HTTP response as proof that MySQL is configured or reachable.
 
 ## Desktop stack (supplementary)
 
@@ -35,8 +35,9 @@ From the repository root:
     php -l web/public/index.php
     php tests/php/run.php
     php tests/php/schema_contract.php
+    php tests/php/session_security.php
 
-For database integration tests, apply the migration to a disposable MySQL 8.4 database and set DB_HOST, DB_USER, DB_PASSWORD, and DB_NAME before running php tests/php/database_integration.php. CI provisions an isolated MySQL service, applies the migration, and runs these checks automatically.
+For database integration tests, apply migrations 001 and 002 to a disposable MySQL 8.4 database and set DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, and a random AUTH_RATE_LIMIT_SECRET of at least 32 characters. CI provisions an isolated MySQL service, applies both migrations, and runs database, authentication, and login-throttling tests automatically.
 
 The initial schema covers configurable program requirements and approved credit records as well as application workflow data. The current database tests check table creation, unique email enforcement, and rejection of invalid foreign-key references. Authentication integration tests verify valid active-account credentials, wrong passwords, unknown email addresses, pending/disabled accounts, empty inputs, safe return values, and successful-login timestamps. They do not prove every workflow, authorization rule, concurrency case, backup, or restoration scenario.
 
@@ -44,7 +45,7 @@ The initial schema covers configurable program requirements and approved credit 
 
 Before enabling a workflow, add tests for the corresponding behavior:
 
-- Authentication: a minimal credential-verifier test now covers valid/invalid credentials, pending/disabled accounts, unknown email, empty input, and safe return values. Still required: HTTP login flow, password reset, session rotation, secure cookie settings, logout, CSRF protection, login throttling, and operational recovery.
+- Authentication: credential-verifier tests cover valid/invalid credentials, pending/disabled accounts, unknown email, empty input, and safe return values. Session security primitives now cover session ID rotation, minimized identity storage, CSRF token validation, and session destruction. Still required: password reset, role/resource authorization, comprehensive endpoint tests, and operational recovery. HTTP authentication endpoints and database-backed login throttling are present as a development foundation but must not be treated as production-ready until reviewed and tested end-to-end.
 - Authorization: every protected endpoint denied by default; applicant cannot read another applicant's files; evaluators see only assigned cases; registrar and approver permissions remain distinct; administrator cannot silently approve academic outcomes.
 - Input and SQL: prepared statements; malformed IDs and payloads; server-side validation; invalid state transitions; duplicate submissions and concurrency.
 - Evidence uploads: extension/MIME/content checks, size limits, randomized storage names, storage outside the public web root, path traversal rejection, access checks on download.

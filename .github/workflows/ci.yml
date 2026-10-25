@@ -58,6 +58,11 @@ jobs:
           MYSQL_PWD: root
         run: mysql --host=127.0.0.1 --user=root equipath_eteeap < database/migrations/001_initial_schema.sql
 
+      - name: Apply authentication rate-limit migration
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --user=root equipath_eteeap < database/migrations/002_authentication_rate_limits.sql
+
       - name: Run database integrity integration tests
         env:
           DB_HOST: 127.0.0.1
@@ -73,6 +78,18 @@ jobs:
           DB_PASSWORD: root
           DB_NAME: equipath_eteeap
         run: php tests/php/authentication_integration.php
+
+      - name: Run session security tests
+        run: php tests/php/session_security.php
+
+      - name: Run login rate-limit integration tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: equipath_eteeap
+          AUTH_RATE_LIMIT_SECRET: ci-only-test-secret-that-is-at-least-32-chars
+        run: php tests/php/login_rate_limit_integration.php
 
   desktop-build:
     name: C# WinForms build
