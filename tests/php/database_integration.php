@@ -13,8 +13,8 @@ try {
 
     $tableResult = $db->query("SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'");
     $tableCount = (int) $tableResult->fetch_assoc()['table_count'];
-    if ($tableCount !== 21) {
-        throw new RuntimeException("Expected 21 base tables; found {$tableCount}.");
+    if ($tableCount !== 23) {
+        throw new RuntimeException("Expected 23 base tables; found {$tableCount}.");
     }
 
     $suffix = bin2hex(random_bytes(6));
