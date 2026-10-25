@@ -55,6 +55,22 @@ CREATE TABLE academic_programs (
     CONSTRAINT chk_program_code_nonempty CHECK (CHAR_LENGTH(TRIM(program_code)) > 0)
 ) ENGINE=InnoDB;
 
+CREATE TABLE program_requirements (
+    program_requirement_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    program_id BIGINT UNSIGNED NOT NULL,
+    requirement_key VARCHAR(60) NOT NULL,
+    requirement_name VARCHAR(180) NOT NULL,
+    description TEXT NULL,
+    is_required BOOLEAN NOT NULL DEFAULT TRUE,
+    max_file_size_bytes BIGINT UNSIGNED NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (program_requirement_id),
+    UNIQUE KEY uq_program_requirement (program_id, requirement_key),
+    CONSTRAINT fk_program_requirements_program FOREIGN KEY (program_id) REFERENCES academic_programs(program_id) ON DELETE RESTRICT,
+    CONSTRAINT chk_requirement_file_size CHECK (max_file_size_bytes IS NULL OR max_file_size_bytes > 0)
+) ENGINE=InnoDB;
+
 CREATE TABLE application_periods (
     period_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     period_name VARCHAR(120) NOT NULL,
@@ -264,6 +280,19 @@ CREATE TABLE accreditation_decisions (
     CONSTRAINT fk_decisions_application FOREIGN KEY (application_id) REFERENCES applications(application_id) ON DELETE RESTRICT,
     CONSTRAINT fk_decisions_decider FOREIGN KEY (decided_by) REFERENCES users(user_id) ON DELETE RESTRICT,
     CONSTRAINT fk_decisions_supersedes FOREIGN KEY (supersedes_decision_id) REFERENCES accreditation_decisions(accreditation_decision_id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE accredited_credits (
+    accredited_credit_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    accreditation_decision_id BIGINT UNSIGNED NOT NULL,
+    course_code VARCHAR(40) NOT NULL,
+    course_title VARCHAR(180) NOT NULL,
+    approved_credits DECIMAL(6,2) NOT NULL,
+    recorded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (accredited_credit_id),
+    UNIQUE KEY uq_decision_course_credit (accreditation_decision_id, course_code),
+    CONSTRAINT fk_accredited_credits_decision FOREIGN KEY (accreditation_decision_id) REFERENCES accreditation_decisions(accreditation_decision_id) ON DELETE RESTRICT,
+    CONSTRAINT chk_approved_credits CHECK (approved_credits >= 0)
 ) ENGINE=InnoDB;
 
 CREATE TABLE notifications (
