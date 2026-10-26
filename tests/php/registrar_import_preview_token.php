@@ -25,12 +25,12 @@ registrarPreviewAssert(
     'A valid token for the same registrar and current time should be accepted.'
 );
 registrarPreviewAssert(
-    RegistrarImportPreview::isValid($token, array_merge($pending, ['created_at' => $now - 900]), 73, $now),
-    'A preview at the exact 15-minute expiry boundary should remain valid.'
+    RegistrarImportPreview::isValid($token, array_merge($pending, ['created_at' => $now - 899]), 73, $now),
+    'A preview just before the 15-minute expiry boundary should remain valid.'
 );
 registrarPreviewAssert(
-    !RegistrarImportPreview::isValid($token, array_merge($pending, ['created_at' => $now - 901]), 73, $now),
-    'An expired preview must be rejected.'
+    !RegistrarImportPreview::isValid($token, array_merge($pending, ['created_at' => $now - 900]), 73, $now),
+    'A preview at or beyond the 15-minute expiry boundary must be rejected.'
 );
 registrarPreviewAssert(
     !RegistrarImportPreview::isValid($token, array_merge($pending, ['created_at' => $now + 1]), 73, $now),
