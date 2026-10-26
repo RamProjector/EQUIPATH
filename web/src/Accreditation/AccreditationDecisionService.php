@@ -150,8 +150,10 @@ final class AccreditationDecisionService
                 foreach ($normalizedCredits as $credit) {
                     $recommendationQuery = $db->prepare(
                         'SELECT COUNT(*) AS total, MAX(recommended_credits) AS maximum_recommended
-                         FROM credit_recommendations
-                         WHERE application_id = ? AND UPPER(course_code) = ? AND course_title = ?'
+                         FROM credit_recommendations cr
+                         INNER JOIN evaluator_assignments ea ON ea.evaluator_assignment_id = cr.evaluator_assignment_id
+                         WHERE cr.application_id = ? AND UPPER(cr.course_code) = ? AND cr.course_title = ?
+                           AND ea.assignment_status = 'submitted''
                     );
                     $courseCode = $credit['course_code'];
                     $courseTitle = $credit['course_title'];
