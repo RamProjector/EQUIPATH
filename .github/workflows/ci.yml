@@ -54,6 +54,7 @@ jobs:
         run: |
           node --check web/assets/js/app.js
           node --check web/assets/js/applicant-applications.js
+          node --check web/assets/js/screening.js
           node --check web/assets/js/assessments.js
           node --check web/assets/js/credit-recommendations.js
           node --check web/assets/js/accreditation.js
