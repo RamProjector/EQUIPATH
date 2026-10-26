@@ -12,6 +12,7 @@ declare(strict_types=1);
   <link rel="stylesheet" href="../assets/css/app.css">
   <script src="../assets/js/app.js" defer></script>
   <script src="../assets/js/screening.js" defer></script>
+  <script src="../assets/js/evaluator-assignments.js" defer></script>
   <script src="../assets/js/applicant-applications.js" defer></script>
   <script src="../assets/js/assessments.js" defer></script>
   <script src="../assets/js/credit-recommendations.js" defer></script>
@@ -111,6 +112,18 @@ declare(strict_types=1);
             <button id="submit-screening-decision" class="button primary" type="submit">Record screening outcome</button>
           </form>
         </div>
+      </section>
+
+      <section id="assignment-workspace" class="inbox" aria-labelledby="assignment-title" hidden>
+        <div class="inbox-heading">
+          <div>
+            <h3 id="assignment-title">Evaluator assignments</h3>
+            <p class="section-intro">Assign active evaluators to applications approved for evaluation. Duplicate assignments are rejected by the server.</p>
+          </div>
+          <button id="refresh-assignments" class="button secondary compact" type="button">Refresh</button>
+        </div>
+        <p id="assignment-status" class="status-message" role="status" aria-live="polite"></p>
+        <ul id="assignment-application-list" class="notification-list" aria-label="Applications available for evaluator assignment"></ul>
       </section>
 
       <section id="applicant-workspace" class="inbox" aria-labelledby="applicant-title" hidden>
