@@ -32,7 +32,7 @@ try {
         exit;
     }
     $access = new AccessControl();
-    $access->requireAuthenticated();
+    $registrarUserId = $access->requireAuthenticated();
     $db = ConnectionFactory::createFromEnvironment();
     $access->requireAnyRole($db, ['registrar']);
 
@@ -58,8 +58,22 @@ try {
     $rows = $service->parseCsv($contents);
     $preview = $service->previewRows($db, $sourceSystem, $rows);
     $counts = ['ready' => 0, 'already_mapped' => 0, 'conflict' => 0, 'invalid' => 0];
-    foreach ($preview as &$row) {
+    foreach ($preview as $row) {
         $counts[$row['status']] = ($counts[$row['status']] ?? 0) + 1;
+    }
+
+    // Keep the exact parsed rows and their server-resolved preview in the
+    // authenticated session. The browser receives only an opaque one-use token.
+    $previewToken = bin2hex(random_bytes(32));
+    $_SESSION['registrar_import_preview'] = [
+        'token_hash' => hash('sha256', $previewToken),
+        'registrar_user_id' => $registrarUserId,
+        'source_system' => strtoupper(trim($sourceSystem)),
+        'rows' => $rows,
+        'created_at' => time(),
+    ];
+
+    foreach ($preview as &$row) {
         unset($row['local_entity_id']);
     }
     unset($row);
@@ -69,6 +83,8 @@ try {
         'counts' => $counts,
         'rows' => $preview,
         'commit_allowed' => $counts['ready'] > 0,
+        'preview_token' => $previewToken,
+        'preview_expires_in_seconds' => 900,
         'row_limit' => RegistrarImportService::MAX_ROWS,
     ], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
 } catch (InvalidArgumentException $error) {
