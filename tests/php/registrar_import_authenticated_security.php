@@ -16,6 +16,7 @@ $userIds = [];
 $batchIds = [];
 $sessionDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'equipath-registrar-auth-' . bin2hex(random_bytes(8));
 $server = null;
+$exitCode = 0;
 $port = random_int(20000, 45000);
 
 function registrarAuthAssert(bool $condition, string $message): void
@@ -232,7 +233,7 @@ try {
     fwrite(STDOUT, "PASS: authenticated registrar endpoint checks (failed-commit retry, cross-session rejection, non-registrar denial, and replay rejection after success).\n");
 } catch (Throwable $error) {
     fwrite(STDERR, 'FAIL: authenticated registrar endpoint checks — ' . $error->getMessage() . "\n");
-    exit(1);
+    $exitCode = 1;
 } finally {
     if (is_resource($server)) {
         proc_terminate($server);
@@ -285,3 +286,5 @@ try {
         $db->close();
     }
 }
+
+exit($exitCode);
