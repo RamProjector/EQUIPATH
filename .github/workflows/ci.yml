@@ -120,6 +120,14 @@ jobs:
           DB_NAME: equipath_eteeap
         run: php tests/php/application_draft_integration.php
 
+      - name: Run application submission integration tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: equipath_eteeap
+        run: php tests/php/application_submission_integration.php
+
       - name: Run application screening integration tests
         env:
           DB_HOST: 127.0.0.1
