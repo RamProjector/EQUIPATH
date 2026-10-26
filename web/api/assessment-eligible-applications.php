@@ -36,11 +36,12 @@ try {
                 AND EXISTS (
                     SELECT 1 FROM evaluator_assignments ea
                     WHERE ea.application_id = a.application_id
+                      AND ea.assignment_status IN ('assigned', 'in_progress', 'submitted')
                 )
                 AND NOT EXISTS (
                     SELECT 1 FROM evaluator_assignments ea
                     WHERE ea.application_id = a.application_id
-                      AND ea.assignment_status <> 'submitted'
+                      AND ea.assignment_status IN ('assigned', 'in_progress')
                 )
             )
          ORDER BY a.updated_at DESC, a.application_id DESC
