@@ -32,8 +32,8 @@ final class ApplicationScreeningService
         if (!isset(self::OUTCOME_STATUS[$outcome])) {
             throw new InvalidArgumentException('A supported screening outcome is required.');
         }
-        if (strlen($notes) > 1000 || str_contains($notes, "\0")) {
-            throw new InvalidArgumentException('Screening feedback must be at most 1000 bytes and contain no NUL bytes.');
+        if (strlen($notes) > 900 || str_contains($notes, "\0")) {
+            throw new InvalidArgumentException('Applicant-facing screening feedback must be at most 900 bytes and contain no NUL bytes.');
         }
 
         $targetStatus = self::OUTCOME_STATUS[$outcome];
