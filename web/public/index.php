@@ -101,6 +101,26 @@ declare(strict_types=1);
             <p id="evaluation-status" class="status-message" role="status" aria-live="polite"></p>
           </form>
         </div>
+
+        <div id="credit-recommendations-editor" class="evaluation-editor" hidden>
+          <div class="inbox-heading">
+            <div>
+              <h4 id="credit-recommendations-title">Credit recommendations</h4>
+              <p id="credit-recommendations-subtitle" class="section-intro"></p>
+            </div>
+            <button id="close-credit-recommendations" class="button secondary compact" type="button">Close</button>
+          </div>
+          <p class="section-intro">These are evaluator recommendations for review by authorized college personnel. They are not approved credits or a final accreditation decision.</p>
+          <ul id="credit-recommendations-list" class="notification-list" aria-label="Submitted credit recommendations"></ul>
+          <p id="credit-recommendations-status" class="status-message" role="status" aria-live="polite"></p>
+          <form id="credit-recommendations-form" class="assessment-form">
+            <div id="credit-recommendation-fields" class="criteria-list"></div>
+            <div class="evaluation-actions">
+              <button id="add-credit-recommendation" class="button secondary" type="button">Add course</button>
+              <button id="submit-credit-recommendations" class="button primary" type="submit">Submit recommendations</button>
+            </div>
+          </form>
+        </div>
       </section>
 
       <section id="assessment-workspace" class="inbox" aria-labelledby="assessment-title" hidden>
