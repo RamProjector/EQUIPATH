@@ -159,6 +159,13 @@ try {
     $documentIds['employment_v2'] = screeningInsertDocument($db, $applicationIds['submitted'], $userIds['applicant'], 'employment_certificate', 2);
 
     $service = new ApplicationScreeningService();
+    try {
+        $service->review($db, $userIds['coordinator'], $applicationIds['submitted'], 'eligible', '');
+        throw new RuntimeException('An application with unaccepted required documents was marked eligible.');
+    } catch (DomainException) {
+        // Eligibility requires accepted latest versions for every active required document.
+    }
+
     $result = $service->review(
         $db,
         $userIds['coordinator'],
