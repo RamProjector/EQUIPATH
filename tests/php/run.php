@@ -102,6 +102,7 @@ test('public workspace exposes accessible sign-in and notification controls', fu
     foreach (['../api/assessments.php', '../api/assessment-eligible-applications.php', '../api/create-assessment.php', '../api/record-assessment-result.php'] as $endpoint) {
         assertTrue(str_contains($assessmentScript, $endpoint), "Assessment client is missing API integration: {$endpoint}");
     }
+    assertTrue(!str_contains($assessmentScript, 'innerHTML'), 'Assessment data must be rendered as text, not interpreted as markup.');
     assertTrue(str_contains($page, 'assets/js/assessments.js'), 'Landing page must load the assessment client module.');
     assertTrue(str_contains($script, 'message.textContent'), 'Notification message must be rendered as text, not interpreted as markup.');
     assertTrue(!str_contains($script, 'innerHTML'), 'Workspace script must not use innerHTML for untrusted server-provided notification content.');
