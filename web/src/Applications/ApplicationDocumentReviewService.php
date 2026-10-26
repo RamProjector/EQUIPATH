@@ -24,8 +24,10 @@ final class ApplicationDocumentReviewService
         $db->begin_transaction();
         try {
             $find = $db->prepare(
-                'SELECT a.application_id, a.applicant_user_id, a.application_status,
-                        d.document_type, d.version_number, d.review_status
+                'SELECT a.application_id, a.applicant_user_id, a.program_id, a.application_status,
+                        d.document_type, d.version_number, d.review_status,
+                        (SELECT MAX(latest.version_number) FROM application_documents latest
+                         WHERE latest.application_id = d.application_id AND latest.document_type = d.document_type) AS latest_version_number
                  FROM application_documents d
                  INNER JOIN applications a ON a.application_id = d.application_id
                  WHERE d.document_id = ?
@@ -49,6 +51,23 @@ final class ApplicationDocumentReviewService
             }
             if ($previousReviewStatus !== 'pending') {
                 throw new DomainException('Only a pending document version can be reviewed. Upload a new version for further review.');
+            }
+            if ((int) $row['version_number'] !== (int) $row['latest_version_number']) {
+                throw new DomainException('Only the latest document version can be reviewed.');
+            }
+
+            $requirementQuery = $db->prepare(
+                'SELECT program_requirement_id FROM program_requirements
+                 WHERE program_id = ? AND requirement_key = ? AND is_active = TRUE LIMIT 1'
+            );
+            $programId = (int) $row['program_id'];
+            $documentType = (string) $row['document_type'];
+            $requirementQuery->bind_param('is', $programId, $documentType);
+            $requirementQuery->execute();
+            $requirementExists = $requirementQuery->get_result()->fetch_assoc() !== null;
+            $requirementQuery->close();
+            if (!$requirementExists) {
+                throw new DomainException('The document no longer matches an active program requirement.');
             }
 
             $updateDocument = $db->prepare(
