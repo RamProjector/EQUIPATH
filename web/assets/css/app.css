@@ -98,3 +98,66 @@ a:focus-visible, button:focus-visible { outline: 3px solid #f0b429; outline-offs
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 @media (max-width: 760px) { .cards { grid-template-columns: repeat(2, 1fr); } .hero { padding-bottom: 52px; } }
 @media (max-width: 560px) { .shell { width: calc(100% - 28px); } .cards { grid-template-columns: 1fr; } footer { flex-direction: column; } .environment { font-size: .72rem; } .workspace-heading, .inbox-heading { align-items: flex-start; } .notification-item { flex-direction: column; } .notification-item .button { align-self: flex-start; } .workspace-heading { flex-direction: column; } }
+
+
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 12px;
+  margin: 18px 0 24px;
+}
+.report-summary-card {
+  border: 1px solid var(--line, #d8e2e7);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  padding: 14px;
+  min-width: 0;
+}
+.report-summary-label {
+  margin: 0;
+  color: var(--muted, #52636b);
+  font-size: .82rem;
+  text-transform: capitalize;
+}
+.report-summary-value {
+  margin: 8px 0 0;
+  font-size: 1.55rem;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+.report-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.report-section {
+  min-width: 0;
+  border: 1px solid var(--line, #d8e2e7);
+  border-radius: 12px;
+  padding: 14px;
+  background: var(--surface, #fff);
+  overflow-x: auto;
+}
+.report-section h4 { margin: 0 0 12px; }
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+}
+.report-table th, .report-table td {
+  padding: 9px 8px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line, #d8e2e7);
+  overflow-wrap: anywhere;
+}
+.report-table th { font-weight: 750; }
+.report-section dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  margin: 0;
+}
+.report-section dt { color: var(--muted, #52636b); }
+.report-section dd { margin: 0; font-weight: 700; }
