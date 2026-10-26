@@ -116,6 +116,10 @@ final class ReportingService
              FROM accreditation_decisions d
              LEFT JOIN accredited_credits c ON c.accreditation_decision_id = d.accreditation_decision_id
              WHERE d.decision = 'approved'
+               AND NOT EXISTS (
+                 SELECT 1 FROM accreditation_decisions successor
+                 WHERE successor.supersedes_decision_id = d.accreditation_decision_id
+               )
                AND d.decided_at >= ? AND d.decided_at < DATE_ADD(?, INTERVAL 1 DAY)"
         );
         $statement->bind_param('ss', $from, $to);
