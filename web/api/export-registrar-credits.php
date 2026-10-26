@@ -66,7 +66,8 @@ try {
     $result = $statement->get_result();
 
     header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="equipath-approved-credits-' . $range['from'] . '-to-' . $range['to'] . '.csv"');
+    $filenameRange = $allCurrentCredits ? 'all-current' : $range['from'] . '-to-' . $range['to'];
+    header('Content-Disposition: attachment; filename="equipath-approved-credits-' . $filenameRange . '.csv"');
     $output = fopen('php://output', 'w');
     if ($output === false) throw new RuntimeException('Unable to stream registrar export.');
     fputcsv($output, ['application_number', 'program_code', 'course_code', 'course_title', 'approved_credits', 'decision_at'], ',', '"', '');
