@@ -22,7 +22,13 @@ function registrarIntegrationAssert(bool $condition, string $message): void
 function registrarIntegrationInsert(mysqli $db, string $sql, string $types, array $values): int
 {
     $statement = $db->prepare($sql);
-    $statement->bind_param($types, ...$values);
+    $references = [];
+    foreach ($values as $index => &$value) {
+        $references[$index] = &$value;
+    }
+    unset($value);
+    array_unshift($references, $types);
+    $statement->bind_param(...$references);
     $statement->execute();
     $id = (int) $db->insert_id;
     $statement->close();
