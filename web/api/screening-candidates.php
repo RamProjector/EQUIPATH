@@ -34,6 +34,10 @@ try {
                 (SELECT COUNT(*)
                  FROM program_requirements pr
                  WHERE pr.program_id = a.program_id
+                   AND pr.is_active = TRUE AND pr.is_required = TRUE) AS required_document_count,
+                (SELECT COUNT(*)
+                 FROM program_requirements pr
+                 WHERE pr.program_id = a.program_id
                    AND pr.is_active = TRUE AND pr.is_required = TRUE
                    AND NOT EXISTS (
                      SELECT 1 FROM application_documents d
@@ -90,6 +94,7 @@ try {
                 'family_name' => (string) $row['family_name'],
             ],
             'document_count' => (int) $row['document_count'],
+            'required_document_count' => (int) $row['required_document_count'],
             'missing_required_document_count' => (int) $row['missing_required_document_count'],
             'unaccepted_required_document_count' => (int) $row['unaccepted_required_document_count'],
         ];
