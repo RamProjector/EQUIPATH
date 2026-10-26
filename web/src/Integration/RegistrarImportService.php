@@ -85,12 +85,12 @@ final class RegistrarImportService
                  SELECT 1 FROM accreditation_decisions successor
                  WHERE successor.supersedes_decision_id = d.accreditation_decision_id
                )
-             LIMIT 2" 
+             LIMIT 2 FOR UPDATE" 
         );
         $mappingQuery = $db->prepare(
             'SELECT local_entity_type, local_entity_id
              FROM external_record_mappings
-             WHERE source_system = ? AND external_record_id = ? LIMIT 1'
+             WHERE source_system = ? AND external_record_id = ? LIMIT 1 FOR UPDATE'
         );
 
         $preview = [];
@@ -197,21 +197,6 @@ final class RegistrarImportService
             $accepted = 0;
             $rejected = 0;
             $errors = [];
-            foreach ($preview as $entry) {
-                if ($entry['status'] === 'ready') {
-                    $externalId = (string) $entry['external_record_id'];
-                    $entityType = 'accredited_credit';
-                    $entityId = (int) $entry['local_entity_id'];
-                    $insert = $db->prepare(
-                        'INSERT INTO external_record_mappings
-                            (integration_batch_id, source_system, external_record_id, local_entity_type, local_entity_id)
-                         VALUES (?, ?, ?, ?, ?)'
-                    );
-                    // Batch ID is created below; defer inserts until after the batch row exists.
-                    $insert->close();
-                }
-            }
-
             $startedBy = $registrarUserId;
             $batchStatus = 'processing';
             $startedAt = date('Y-m-d H:i:s');
@@ -268,7 +253,7 @@ final class RegistrarImportService
 
             $actionKey = 'registrar.import.completed';
             $entityType = 'integration_batch';
-            $auditOutcome = $rejected === 0 ? 'success' : 'partial';
+            $auditOutcome = $accepted > 0 ? 'success' : 'failure';
             $metadata = json_encode([
                 'source_system' => $sourceSystem,
                 'total_rows' => $total,
