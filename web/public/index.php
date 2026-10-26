@@ -214,6 +214,10 @@ declare(strict_types=1);
             <button id="close-applicant-documents" class="button secondary compact" type="button">Close</button>
           </div>
           <ul id="applicant-document-list" class="notification-list" aria-label="Uploaded application documents"></ul>
+          <h5>Application timeline</h5>
+          <ul id="application-status-history" class="notification-list" aria-label="Application status history"></ul>
+          <h5>Screening feedback</h5>
+          <ul id="application-screening-feedback" class="notification-list" aria-label="Screening feedback from the college"></ul>
           <div class="evaluation-actions">
             <button id="submit-application-button" class="button primary" type="button">Submit application for screening</button>
           </div>
