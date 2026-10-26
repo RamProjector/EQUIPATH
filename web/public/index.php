@@ -14,6 +14,7 @@ declare(strict_types=1);
   <script src="../assets/js/screening.js" defer></script>
   <script src="../assets/js/evaluator-assignments.js" defer></script>
   <script src="../assets/js/rubric-configuration.js" defer></script>
+  <script src="../assets/js/reports.js" defer></script>
   <script src="../assets/js/applicant-applications.js" defer></script>
   <script src="../assets/js/assessments.js" defer></script>
   <script src="../assets/js/credit-recommendations.js" defer></script>
@@ -156,6 +157,27 @@ declare(strict_types=1);
             <button id="save-rubric" class="button primary" type="submit">Create rubric version</button>
           </form>
         </div>
+      </section>
+
+      <section id="reports-workspace" class="inbox" aria-labelledby="reports-title" hidden>
+        <div class="inbox-heading">
+          <div>
+            <h3 id="reports-title">Reports</h3>
+            <p class="section-intro">Aggregate workflow activity for the selected period. Reports exclude applicant names, email addresses and document metadata.</p>
+          </div>
+          <a id="export-report" class="button secondary compact" href="../api/export-report.php" target="_blank" rel="noopener">Export CSV</a>
+        </div>
+        <form id="reports-filter-form" class="assessment-form">
+          <label for="reports-from">From</label>
+          <input id="reports-from" type="date" required>
+          <label for="reports-to">To</label>
+          <input id="reports-to" type="date" required>
+          <p class="field-hint">Choose a range of up to 366 calendar days.</p>
+          <button id="refresh-reports" class="button primary" type="submit">Refresh report</button>
+        </form>
+        <p id="reports-status" class="status-message" role="status" aria-live="polite"></p>
+        <div id="reports-summary" class="report-summary" aria-label="Report summary"></div>
+        <div id="reports-sections" class="report-sections"></div>
       </section>
 
       <section id="applicant-workspace" class="inbox" aria-labelledby="applicant-title" hidden>
