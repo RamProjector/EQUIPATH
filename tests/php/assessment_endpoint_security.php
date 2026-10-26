@@ -59,6 +59,7 @@ try {
     $scheduleUrl = $base . 'create-assessment.php';
     $resultUrl = $base . 'record-assessment-result.php';
     $listUrl = $base . 'assessments.php';
+    $candidatesUrl = $base . 'assessment-eligible-applications.php';
     $ready = false;
     for ($attempt = 0; $attempt < 40; $attempt++) {
         [$status] = requestAssessmentEndpoint($scheduleUrl, 'GET');
@@ -72,7 +73,7 @@ try {
         throw new RuntimeException('HTTP server did not become ready for assessment endpoint tests.');
     }
 
-    foreach ([$scheduleUrl => 'create assessment', $resultUrl => 'record assessment result', $listUrl => 'assessment list'] as $url => $label) {
+    foreach ([$scheduleUrl => 'create assessment', $resultUrl => 'record assessment result', $listUrl => 'assessment list', $candidatesUrl => 'assessment candidate list'] as $url => $label) {
         [$status, $body] = requestAssessmentEndpoint($url, 'POST');
         $json = json_decode($body, true);
         if ($status !== 405 || ($json['error'] ?? null) !== 'method_not_allowed') {
@@ -109,6 +110,12 @@ try {
     $listAuthJson = json_decode($listAuthBody, true);
     if ($listAuthStatus !== 401 || ($listAuthJson['error'] ?? null) !== 'authentication_required') {
         throw new RuntimeException('Assessment list did not reject unauthenticated GET with HTTP 401.');
+    }
+
+    [$candidateAuthStatus, $candidateAuthBody] = requestAssessmentEndpoint($candidatesUrl, 'GET');
+    $candidateAuthJson = json_decode($candidateAuthBody, true);
+    if ($candidateAuthStatus !== 401 || ($candidateAuthJson['error'] ?? null) !== 'authentication_required') {
+        throw new RuntimeException('Assessment candidate list did not reject unauthenticated GET with HTTP 401.');
     }
 
     fwrite(STDOUT, "PASS: assessment endpoint HTTP guards (method restrictions, CSRF rejection and unauthenticated list denial).\n");
