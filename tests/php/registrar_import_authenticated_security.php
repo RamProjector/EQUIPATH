@@ -82,7 +82,7 @@ function registrarAuthPreviewRequest(string $url, string $sessionId, string $csr
     $response = @file_get_contents($url, false, $context);
     $status = 0;
     foreach ($http_response_header ?? [] as $line) {
-        if (preg_match('/^HTTP\\/\\S+\\s+(\\d{3})/', $line, $match)) $status = (int) $match[1];
+        if (preg_match('/^HTTP\/\S+\s+(\d{3})/', $line, $match)) $status = (int) $match[1];
     }
     return [$status, is_string($response) ? $response : ''];
 }
