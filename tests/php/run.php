@@ -115,7 +115,7 @@ test('public workspace exposes accessible sign-in and notification controls', fu
     }
     assertTrue(str_contains($page, 'assets/js/accreditation.js'), 'Landing page must load the accreditation client module.');
     $applicantScript = (string) file_get_contents($root . '/web/assets/js/applicant-applications.js');
-    foreach (['../api/application-options.php', '../api/applications.php', '../api/create-application.php', '../api/application-documents.php', '../api/upload-document.php', '../api/download-document.php'] as $endpoint) {
+    foreach (['../api/application-options.php', '../api/applications.php', '../api/create-application.php', '../api/submit-application.php', '../api/application-documents.php', '../api/upload-document.php', '../api/download-document.php'] as $endpoint) {
         assertTrue(str_contains($applicantScript, $endpoint), "Applicant workspace is missing API integration: {$endpoint}");
     }
     foreach (['id="applicant-workspace"', 'id="new-application-form"', 'id="applicant-upload-form"', 'id="applicant-document-list"'] as $expected) {
