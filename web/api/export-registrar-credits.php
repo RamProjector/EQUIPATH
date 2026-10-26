@@ -40,23 +40,28 @@ try {
     $db = ConnectionFactory::createFromEnvironment();
     $access->requireAnyRole($db, ['registrar']);
 
-    $range = (new ReportingService())->normalizeDateRange(registrarExportDate('from'), registrarExportDate('to'));
-    $statement = $db->prepare(
-        "SELECT a.application_number, p.program_code, c.course_code, c.course_title,
-                c.approved_credits, d.decided_at
-         FROM accreditation_decisions d
-         INNER JOIN applications a ON a.application_id = d.application_id
-         INNER JOIN academic_programs p ON p.program_id = a.program_id
-         INNER JOIN accredited_credits c ON c.accreditation_decision_id = d.accreditation_decision_id
-         WHERE d.decision = 'approved'
-           AND NOT EXISTS (
-             SELECT 1 FROM accreditation_decisions successor
-             WHERE successor.supersedes_decision_id = d.accreditation_decision_id
-           )
-           AND d.decided_at >= ? AND d.decided_at < DATE_ADD(?, INTERVAL 1 DAY)
-         ORDER BY a.application_number, c.course_code, c.accredited_credit_id"
+    $requestedFrom = registrarExportDate('from');
+    $requestedTo = registrarExportDate('to');
+    $allCurrentCredits = ($requestedFrom === null || $requestedFrom === '') && ($requestedTo === null || $requestedTo === '');
+    $range = $allCurrentCredits ? null : (new ReportingService())->normalizeDateRange(
+        $requestedFrom === '' ? null : $requestedFrom,
+        $requestedTo === '' ? null : $requestedTo
     );
-    $statement->bind_param('ss', $range['from'], $range['to']);
+    $dateFilter = $allCurrentCredits ? '' : ' AND d.decided_at >= ? AND d.decided_at < DATE_ADD(?, INTERVAL 1 DAY)';
+    $sql = "SELECT a.application_number, p.program_code, c.course_code, c.course_title,
+                   c.approved_credits, d.decided_at
+            FROM accreditation_decisions d
+            INNER JOIN applications a ON a.application_id = d.application_id
+            INNER JOIN academic_programs p ON p.program_id = a.program_id
+            INNER JOIN accredited_credits c ON c.accreditation_decision_id = d.accreditation_decision_id
+            WHERE d.decision = 'approved'
+              AND NOT EXISTS (
+                SELECT 1 FROM accreditation_decisions successor
+                WHERE successor.supersedes_decision_id = d.accreditation_decision_id
+              )" . $dateFilter . "
+            ORDER BY a.application_number, c.course_code, c.accredited_credit_id";
+    $statement = $db->prepare($sql);
+    if (!$allCurrentCredits) $statement->bind_param('ss', $range['from'], $range['to']);
     $statement->execute();
     $result = $statement->get_result();
 
@@ -64,7 +69,7 @@ try {
     header('Content-Disposition: attachment; filename="equipath-approved-credits-' . $range['from'] . '-to-' . $range['to'] . '.csv"');
     $output = fopen('php://output', 'w');
     if ($output === false) throw new RuntimeException('Unable to stream registrar export.');
-    fputcsv($output, ['application_number', 'program_code', 'course_code', 'course_title', 'approved_credits', 'decision_at']);
+    fputcsv($output, ['application_number', 'program_code', 'course_code', 'course_title', 'approved_credits', 'decision_at'], ',', '"', '');
     while ($row = $result->fetch_assoc()) {
         fputcsv($output, [
             registrarCsvCell((string) $row['application_number']),
@@ -73,7 +78,7 @@ try {
             registrarCsvCell((string) $row['course_title']),
             number_format((float) $row['approved_credits'], 2, '.', ''),
             (string) $row['decided_at'],
-        ]);
+        ], ',', '"', '');
     }
     fclose($output);
     $statement->close();
