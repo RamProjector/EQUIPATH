@@ -467,6 +467,7 @@
       byId("password").value = "";
       await loadNotifications();
       await loadEvaluationAssignments();
+      document.dispatchEvent(new CustomEvent('equipath:authenticated'));
       workspace.focus?.();
     } catch (error) {
       setStatus(loginStatus, error.message || "Sign-in failed.", "error");
@@ -499,6 +500,7 @@
       evaluationCriteria.replaceChildren();
       currentEvaluation = null;
       setStatus(loginStatus, "You have signed out.", "success");
+      document.dispatchEvent(new CustomEvent('equipath:signed-out'));
       await refreshCsrfToken();
     } catch (error) {
       setStatus(notificationStatus, error.message || "Sign-out failed.", "error");
