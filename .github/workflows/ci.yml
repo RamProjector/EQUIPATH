@@ -90,6 +90,14 @@ jobs:
           DB_NAME: equipath_eteeap
         run: php tests/php/authorization_integration.php
 
+      - name: Run document download integration tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: equipath_eteeap
+        run: php tests/php/document_download_integration.php
+
       - name: Run application draft integration tests
         env:
           DB_HOST: 127.0.0.1
