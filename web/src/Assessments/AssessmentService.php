@@ -223,9 +223,11 @@ final class AssessmentService
             if ((string) $event['event_status'] !== 'scheduled') {
                 throw new DomainException('Only a scheduled assessment can receive its first result.');
             }
-            $timeQuery = $db->prepare('SELECT ? <= CURRENT_TIMESTAMP AS assessment_ended');
-            $endsAt = (string) $event['ends_at'];
-            $timeQuery->bind_param('s', $endsAt);
+            $timeQuery = $db->prepare(
+                'SELECT ends_at <= CURRENT_TIMESTAMP AS assessment_ended
+                 FROM assessment_events WHERE assessment_event_id = ?'
+            );
+            $timeQuery->bind_param('i', $eventId);
             $timeQuery->execute();
             $ended = (int) ($timeQuery->get_result()->fetch_assoc()['assessment_ended'] ?? 0) === 1;
             $timeQuery->close();
