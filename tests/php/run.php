@@ -132,6 +132,13 @@ test('public workspace exposes accessible sign-in and notification controls', fu
     }
     assertTrue(str_contains($page, 'assets/js/screening.js'), 'Landing page must load the screening client module.');
     assertTrue(!str_contains($screeningScript, 'innerHTML'), 'Screening data must be rendered as text, not interpreted as markup.');
+    $assignmentScript = (string) file_get_contents($root . '/web/assets/js/evaluator-assignments.js');
+    foreach (['../api/evaluator-assignment-options.php', '../api/assign-evaluator.php'] as $endpoint) {
+        assertTrue(str_contains($assignmentScript, $endpoint), "Assignment workspace is missing API integration: {$endpoint}");
+    }
+    assertTrue(str_contains($page, 'id="assignment-workspace"'), 'Landing page is missing coordinator assignment workspace markup.');
+    assertTrue(str_contains($page, 'assets/js/evaluator-assignments.js'), 'Landing page must load the evaluator assignment module.');
+    assertTrue(!str_contains($assignmentScript, 'innerHTML'), 'Assignment data must be rendered as text, not interpreted as markup.');
     assertTrue(!str_contains($accreditationScript, 'innerHTML'), 'Accreditation data must be rendered as text, not interpreted as markup.');
     assertTrue(str_contains($page, 'assets/js/assessments.js'), 'Landing page must load the assessment client module.');
     assertTrue(str_contains($script, 'message.textContent'), 'Notification message must be rendered as text, not interpreted as markup.');
