@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/src/Database/ConnectionFactory.php';
 require_once dirname(__DIR__) . '/src/Security/SessionManager.php';
 require_once dirname(__DIR__) . '/src/Security/AccessControl.php';
+require_once dirname(__DIR__) . '/src/Documents/PortfolioDocumentService.php';
 
 header('Cache-Control: no-store, private');
 header('X-Content-Type-Options: nosniff');
@@ -84,9 +85,18 @@ try {
         }
     }
 
+    $storedSize = (int) $document['file_size_bytes'];
+    if ($storedSize < 1 || $storedSize > PortfolioDocumentService::DEFAULT_MAX_BYTES) {
+        throw new RuntimeException('Stored document size is outside the supported range.');
+    }
+
     $path = $storageRoot . DIRECTORY_SEPARATOR . $document['storage_key'];
     if (!is_file($path) || !is_readable($path) || is_link($path)) {
         throw new RuntimeException('Stored document is unavailable.');
+    }
+    $pathSize = filesize($path);
+    if (!is_int($pathSize) || $pathSize !== $storedSize) {
+        throw new RuntimeException('Stored document size does not match its metadata.');
     }
 
     $bytes = file_get_contents($path);
