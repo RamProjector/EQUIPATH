@@ -85,6 +85,7 @@ final class ApplicationSubmissionService
                            AND latest.document_type = d.document_type
                        )
                        AND d.review_status IN ('pending', 'accepted')
+                       AND d.detected_mime_type = 'application/pdf'
                    )
                  ORDER BY pr.requirement_name, pr.requirement_key"
             );
