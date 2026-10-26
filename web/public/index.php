@@ -13,6 +13,7 @@ declare(strict_types=1);
   <script src="../assets/js/app.js" defer></script>
   <script src="../assets/js/screening.js" defer></script>
   <script src="../assets/js/evaluator-assignments.js" defer></script>
+  <script src="../assets/js/rubric-configuration.js" defer></script>
   <script src="../assets/js/applicant-applications.js" defer></script>
   <script src="../assets/js/assessments.js" defer></script>
   <script src="../assets/js/credit-recommendations.js" defer></script>
@@ -124,6 +125,37 @@ declare(strict_types=1);
         </div>
         <p id="assignment-status" class="status-message" role="status" aria-live="polite"></p>
         <ul id="assignment-application-list" class="notification-list" aria-label="Applications available for evaluator assignment"></ul>
+      </section>
+
+      <section id="rubric-workspace" class="inbox" aria-labelledby="rubric-title" hidden>
+        <div class="inbox-heading">
+          <div>
+            <h3 id="rubric-title">Evaluation rubric configuration</h3>
+            <p class="section-intro">Create a new immutable rubric version for an active program. Existing versions and submitted scores are preserved.</p>
+          </div>
+          <button id="refresh-rubrics" class="button secondary compact" type="button">Refresh</button>
+        </div>
+        <p id="rubric-status" class="status-message" role="status" aria-live="polite"></p>
+        <label for="rubric-program">Program</label>
+        <select id="rubric-program" required>
+          <option value="">Choose an active program</option>
+        </select>
+        <h4>Rubric history</h4>
+        <ul id="rubric-history-list" class="notification-list" aria-label="Rubric versions for the selected program"></ul>
+        <div class="evaluation-editor">
+          <h4>Create a new version</h4>
+          <p class="field-hint">Rubric changes are blocked while an application for this program is under evaluation, preventing unfinished assignments from switching criteria.</p>
+          <form id="rubric-form" class="assessment-form">
+            <label for="rubric-name">Rubric name</label>
+            <input id="rubric-name" type="text" maxlength="160" required>
+            <div class="inbox-heading">
+              <h5>Criteria</h5>
+              <button id="add-rubric-criterion" class="button secondary compact" type="button">Add criterion</button>
+            </div>
+            <div id="rubric-criteria-editor" class="criteria-list"></div>
+            <button id="save-rubric" class="button primary" type="submit">Create rubric version</button>
+          </form>
+        </div>
       </section>
 
       <section id="applicant-workspace" class="inbox" aria-labelledby="applicant-title" hidden>

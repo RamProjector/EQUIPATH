@@ -58,6 +58,8 @@ try {
     $base = 'http://127.0.0.1:' . $port . '/api/';
     $url = $base . 'assign-evaluator.php';
     $optionsUrl = $base . 'evaluator-assignment-options.php';
+    $rubricOptionsUrl = $base . 'rubric-management.php';
+    $saveRubricUrl = $base . 'save-rubric.php';
     $ready = false;
     for ($attempt = 0; $attempt < 40; $attempt++) {
         [$status] = requestAssignmentEndpoint($url, 'GET');
@@ -85,6 +87,26 @@ try {
     [$optionsAuthStatus, $optionsAuthBody] = requestAssignmentEndpoint($optionsUrl, 'GET');
     if ($optionsAuthStatus !== 401 || (json_decode($optionsAuthBody, true)['error'] ?? null) !== 'authentication_required') {
         throw new RuntimeException('Evaluator assignment options endpoint was not protected by authentication.');
+    }
+
+    [$rubricOptionsMethodStatus, $rubricOptionsMethodBody] = requestAssignmentEndpoint($rubricOptionsUrl, 'POST');
+    if ($rubricOptionsMethodStatus !== 405 || (json_decode($rubricOptionsMethodBody, true)['error'] ?? null) !== 'method_not_allowed') {
+        throw new RuntimeException('Rubric management endpoint did not reject POST with HTTP 405.');
+    }
+    [$rubricOptionsAuthStatus, $rubricOptionsAuthBody] = requestAssignmentEndpoint($rubricOptionsUrl, 'GET');
+    if ($rubricOptionsAuthStatus !== 401 || (json_decode($rubricOptionsAuthBody, true)['error'] ?? null) !== 'authentication_required') {
+        throw new RuntimeException('Rubric management endpoint was not protected by authentication.');
+    }
+    [$saveRubricMethodStatus, $saveRubricMethodBody] = requestAssignmentEndpoint($saveRubricUrl, 'GET');
+    if ($saveRubricMethodStatus !== 405 || (json_decode($saveRubricMethodBody, true)['error'] ?? null) !== 'method_not_allowed') {
+        throw new RuntimeException('Rubric save endpoint did not reject GET with HTTP 405.');
+    }
+    [$saveRubricCsrfStatus, $saveRubricCsrfBody] = requestAssignmentEndpoint($saveRubricUrl, 'POST', '{"program_id":1,"rubric_name":"test","criteria":[]}', [
+        'Content-Type: application/json',
+        'Content-Length: ' . strlen('{"program_id":1,"rubric_name":"test","criteria":[]}'),
+    ]);
+    if ($saveRubricCsrfStatus !== 403 || (json_decode($saveRubricCsrfBody, true)['error'] ?? null) !== 'csrf_validation_failed') {
+        throw new RuntimeException('Rubric save POST without CSRF was not denied before authentication/database access.');
     }
 
     [$csrfStatus, $csrfBody] = requestAssignmentEndpoint($url, 'POST', $body, [
