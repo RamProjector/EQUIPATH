@@ -31,7 +31,7 @@ final class RegistrarImportPreview
             !is_array($pending['rows']) ||
             !is_int($pending['created_at']) ||
             $pending['created_at'] > $now ||
-            $now - $pending['created_at'] > self::TTL_SECONDS) {
+            $now - $pending['created_at'] >= self::TTL_SECONDS) {
             return false;
         }
 
