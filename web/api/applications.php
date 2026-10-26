@@ -53,7 +53,7 @@ try {
 
     if (in_array('evaluator', $roles, true)) {
         $statement = $db->prepare(
-            "SELECT a.application_id, a.application_number, a.application_status,
+            "SELECT a.application_id, a.program_id, a.application_number, a.application_status,
                     a.submitted_at, a.created_at, a.updated_at, p.program_code, p.program_name,
                     'evaluator' AS access_type
              FROM evaluator_assignments ea
