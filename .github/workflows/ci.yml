@@ -134,6 +134,17 @@ jobs:
       - name: Run evaluator assignment endpoint HTTP guard tests
         run: php tests/php/evaluator_assignment_endpoint_security.php
 
+      - name: Run evaluator scoring integration tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: equipath_eteeap
+        run: php tests/php/evaluator_scoring_integration.php
+
+      - name: Run evaluator scoring endpoint HTTP guard tests
+        run: php tests/php/evaluator_scoring_endpoint_security.php
+
       - name: Run notification integration tests
         env:
           DB_HOST: 127.0.0.1
