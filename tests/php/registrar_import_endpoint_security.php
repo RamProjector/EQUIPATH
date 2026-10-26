@@ -45,14 +45,19 @@ try {
         $ready = false;
         for ($attempt = 0; $attempt < 40; $attempt++) {
             [$status] = registrarRequest($url, 'GET');
-            if ($status === 405) { $ready = true; break; }
+            $expectedReadyStatus = $endpoint === 'export-registrar-credits.php' ? 401 : 405;
+            if ($status === $expectedReadyStatus) { $ready = true; break; }
             usleep(100000);
         }
         if (!$ready) throw new RuntimeException($endpoint . ' did not become ready.');
 
         [$methodStatus, $methodBody] = registrarRequest($url, 'GET');
         $methodJson = json_decode($methodBody, true);
-        if ($methodStatus !== 405 || ($methodJson['error'] ?? null) !== 'method_not_allowed') {
+        if ($endpoint === 'export-registrar-credits.php') {
+            if ($methodStatus !== 401 || ($methodJson['error'] ?? null) !== 'authentication_required') {
+                throw new RuntimeException('The registrar export endpoint did not require authentication for GET.');
+            }
+        } elseif ($methodStatus !== 405 || ($methodJson['error'] ?? null) !== 'method_not_allowed') {
             throw new RuntimeException($endpoint . ' did not reject GET with HTTP 405.');
         }
 
