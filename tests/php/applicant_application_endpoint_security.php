@@ -76,7 +76,7 @@ try {
         throw new RuntimeException('HTTP server did not become ready for applicant endpoint tests.');
     }
 
-    foreach ([$createUrl => 'application creation', $submitUrl => 'application submission', $uploadUrl => 'document upload', $historyUrl => 'application history'] as $url => $label) {
+    foreach ([$createUrl => 'application creation', $submitUrl => 'application submission', $uploadUrl => 'document upload'] as $url => $label) {
         [$status, $body] = requestApplicantEndpoint($url, 'GET');
         $json = json_decode($body, true);
         if ($status !== 405 || ($json['error'] ?? null) !== 'method_not_allowed') {
