@@ -218,12 +218,14 @@
       });
       const data = await readJson(response);
       renderHistory(data.batches);
+      workspace.hidden = false;
     } catch (error) {
       historyList.replaceChildren();
       const item = document.createElement("li");
       item.className = "empty-state";
       item.textContent = error.message || "Could not load registrar integration history.";
       historyList.append(item);
+      if (error.code === "access_denied" || error.code === "authentication_required") workspace.hidden = true;
     }
   }
 
