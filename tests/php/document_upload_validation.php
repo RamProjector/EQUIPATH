@@ -31,7 +31,7 @@ try {
         'portfolio.php',
         'portfolio.pdf:payload',
         "portfolio\n.pdf",
-        str_repeat('a', 250) . '.pdf',
+        str_repeat('a', 252) . '.pdf',
     ] as $badName) {
         $file = $dummyFile;
         $file['name'] = $badName;
