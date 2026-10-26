@@ -36,7 +36,7 @@ try {
     $isEvaluator = in_array('evaluator', $roles, true);
 
     $assignmentQuery = $db->prepare(
-        'SELECT ea.evaluator_assignment_id, ea.application_id, ea.evaluator_user_id,
+        'SELECT ea.evaluator_assignment_id, ea.application_id, ea.evaluator_user_id, ea.assignment_status,
                 a.application_number, a.application_status
          FROM evaluator_assignments ea
          INNER JOIN applications a ON a.application_id = ea.application_id
@@ -86,11 +86,12 @@ try {
             'application_id' => (int) $assignment['application_id'],
             'application_number' => (string) $assignment['application_number'],
             'application_status' => (string) $assignment['application_status'],
+            'assignment_status' => (string) $assignment['assignment_status'],
         ],
         'can_submit' => $isEvaluator &&
             (int) $assignment['evaluator_user_id'] === $userId &&
-            (string) $assignment['application_status'] !== 'approved' &&
-            (string) $assignment['application_status'] !== 'rejected',
+            (string) $assignment['assignment_status'] === 'submitted' &&
+            in_array((string) $assignment['application_status'], ['under_evaluation', 'assessment_scheduled', 'awaiting_decision'], true),
         'recommendations' => $recommendations,
     ], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
 } catch (AuthenticationRequiredException $error) {
