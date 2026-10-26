@@ -5,6 +5,7 @@ require_once dirname(__DIR__) . '/src/Database/ConnectionFactory.php';
 require_once dirname(__DIR__) . '/src/Security/SessionManager.php';
 require_once dirname(__DIR__) . '/src/Security/AccessControl.php';
 require_once dirname(__DIR__) . '/src/Integration/RegistrarImportService.php';
+require_once dirname(__DIR__) . '/src/Integration/RegistrarImportPreview.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -52,18 +53,7 @@ try {
     }
     $previewToken = is_array($payload) ? ($payload['preview_token'] ?? null) : null;
     $pending = $_SESSION['registrar_import_preview'] ?? null;
-    if (!is_string($previewToken) || !preg_match('/^[a-f0-9]{64}$/D', $previewToken) ||
-        !is_array($pending) ||
-        !isset($pending['token_hash'], $pending['registrar_user_id'], $pending['source_system'], $pending['rows'], $pending['created_at']) ||
-        !is_string($pending['token_hash']) ||
-        !is_int($pending['registrar_user_id']) ||
-        $pending['registrar_user_id'] !== $registrarUserId ||
-        !is_string($pending['source_system']) ||
-        !is_array($pending['rows']) ||
-        !is_int($pending['created_at']) ||
-        $pending['created_at'] > time() ||
-        time() - $pending['created_at'] > 900 ||
-        !hash_equals($pending['token_hash'], hash('sha256', $previewToken))) {
+    if (!RegistrarImportPreview::isValid($previewToken, $pending, $registrarUserId)) {
         http_response_code(409);
         echo json_encode(['ok' => false, 'error' => 'preview_missing_expired_or_invalid']);
         exit;
