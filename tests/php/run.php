@@ -139,6 +139,15 @@ test('public workspace exposes accessible sign-in and notification controls', fu
     assertTrue(str_contains($page, 'id="assignment-workspace"'), 'Landing page is missing coordinator assignment workspace markup.');
     assertTrue(str_contains($page, 'assets/js/evaluator-assignments.js'), 'Landing page must load the evaluator assignment module.');
     assertTrue(!str_contains($assignmentScript, 'innerHTML'), 'Assignment data must be rendered as text, not interpreted as markup.');
+    $rubricScript = (string) file_get_contents($root . '/web/assets/js/rubric-configuration.js');
+    foreach (['../api/rubric-management.php', '../api/save-rubric.php'] as $endpoint) {
+        assertTrue(str_contains($rubricScript, $endpoint), "Rubric workspace is missing API integration: {$endpoint}");
+    }
+    foreach (['id="rubric-workspace"', 'id="rubric-program"', 'id="rubric-form"', 'id="rubric-criteria-editor"'] as $expected) {
+        assertTrue(str_contains($page, $expected), "Landing page is missing rubric configuration markup: {$expected}");
+    }
+    assertTrue(str_contains($page, 'assets/js/rubric-configuration.js'), 'Landing page must load the rubric configuration module.');
+    assertTrue(!str_contains($rubricScript, 'innerHTML'), 'Rubric data must be rendered as text, not interpreted as markup.');
     assertTrue(!str_contains($accreditationScript, 'innerHTML'), 'Accreditation data must be rendered as text, not interpreted as markup.');
     assertTrue(str_contains($page, 'assets/js/assessments.js'), 'Landing page must load the assessment client module.');
     assertTrue(str_contains($script, 'message.textContent'), 'Notification message must be rendered as text, not interpreted as markup.');
