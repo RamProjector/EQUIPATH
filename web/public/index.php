@@ -95,6 +95,9 @@ declare(strict_types=1);
             <button id="close-screening-editor" class="button secondary compact" type="button">Close</button>
           </div>
           <h5>Required evidence</h5>
+          <label for="screening-document-notes">Document review reason</label>
+          <textarea id="screening-document-notes" rows="3" maxlength="900" aria-describedby="screening-document-notes-help"></textarea>
+          <p id="screening-document-notes-help" class="field-hint">A reason is required to reject a document or request a replacement. This note is shown to the applicant.</p>
           <ul id="screening-document-list" class="notification-list" aria-label="Application evidence and review actions"></ul>
           <form id="screening-decision-form" class="assessment-form">
             <label for="screening-outcome">Screening outcome</label>
