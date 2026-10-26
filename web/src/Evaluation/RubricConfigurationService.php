@@ -96,15 +96,25 @@ final class RubricConfigurationService
                 throw new DomainException('Multiple active rubrics exist for this program; resolve the configuration before creating a new version.');
             }
 
-            $unfinished = $db->prepare(
-                "SELECT COUNT(*) AS total
-                 FROM applications a
-                 WHERE a.program_id = ? AND a.application_status = 'under_evaluation'"
+            // Lock eligible/under-evaluation application rows so a concurrent
+            // evaluator assignment cannot start under the old rubric between
+            // the safety check and version activation.
+            $evaluationStates = $db->prepare(
+                "SELECT application_id, application_status
+                 FROM applications
+                 WHERE program_id = ? AND application_status IN ('eligible', 'under_evaluation')
+                 FOR UPDATE"
             );
-            $unfinished->bind_param('i', $programId);
-            $unfinished->execute();
-            $unfinishedCount = (int) ($unfinished->get_result()->fetch_assoc()['total'] ?? 0);
-            $unfinished->close();
+            $evaluationStates->bind_param('i', $programId);
+            $evaluationStates->execute();
+            $evaluationStateResult = $evaluationStates->get_result();
+            $unfinishedCount = 0;
+            while ($stateRow = $evaluationStateResult->fetch_assoc()) {
+                if ((string) $stateRow['application_status'] === 'under_evaluation') {
+                    $unfinishedCount++;
+                }
+            }
+            $evaluationStates->close();
             if ($unfinishedCount > 0) {
                 throw new DomainException('An active rubric cannot be replaced while any application for the program is under evaluation.');
             }
