@@ -239,6 +239,14 @@ jobs:
 
       - name: Run registrar import endpoint HTTP guard tests
         run: php tests/php/registrar_import_endpoint_security.php
+
+      - name: Run authenticated registrar endpoint security tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: equipath_eteeap
+        run: php tests/php/registrar_import_authenticated_security.php
       - name: Run registrar preview token lifecycle tests
         run: php tests/php/registrar_import_preview_token.php
 
