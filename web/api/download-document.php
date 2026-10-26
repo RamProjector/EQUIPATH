@@ -68,7 +68,9 @@ try {
         $applicationQuery->close();
         if (!is_array($applicationRow) ||
             !in_array((string) $applicationRow['application_status'], ['submitted', 'screening', 'needs_correction'], true)) {
-            throw new AuthorizationDeniedException('Coordinator document access is outside the screening workflow.');
+            // A coordinator who is also the owner or assigned evaluator still
+            // receives only the narrower access allowed by the shared policy.
+            $access->requireApplicationAccess($db, $applicationId);
         }
     } else {
         $access->requireApplicationAccess($db, $applicationId);
