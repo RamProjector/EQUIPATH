@@ -73,7 +73,12 @@
 
   function formatDate(value) {
     if (typeof value !== "string") return "Date unavailable";
-    const date = new Date(value.replace(" ", "T") + (/[zZ]|[+-]\d{2}:?\d{2}$/.test(value) ? "" : "Z"));
+    // MySQL DATETIME values do not carry a timezone. Preserve their displayed
+    // wall-clock value rather than silently assuming UTC or the browser zone.
+    if (!/[zZ]|[+-]\\d{2}:?\\d{2}$/.test(value)) {
+      return value.replace("T", " ").slice(0, 16);
+    }
+    const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "Date unavailable";
     return new Intl.DateTimeFormat(undefined, {
       dateStyle: "medium",
