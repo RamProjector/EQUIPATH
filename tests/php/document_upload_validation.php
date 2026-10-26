@@ -45,14 +45,14 @@ try {
     $oversized = $dummyFile;
     $oversized['size'] = 101;
     expectUploadRejected(
-        fn() => $service->upload(new mysqli(), 1, 1, 'portfolio', $oversized),
+        fn() => $service->upload($db, 1, 1, 'portfolio', $oversized),
         'Upload exceeding configured size limit was accepted.'
     );
     putenv('EQUIPATH_MAX_UPLOAD_BYTES');
 
     foreach (['../bad', 'UPPERCASE', 'valid-key-with-dash', ''] as $badType) {
         try {
-            $service->upload(new mysqli(), 1, 1, $badType, $dummyFile);
+            $service->upload($db, 1, 1, $badType, $dummyFile);
         } catch (InvalidArgumentException) {
             continue;
         } catch (Throwable $error) {
