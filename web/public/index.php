@@ -70,6 +70,37 @@ declare(strict_types=1);
         <p id="notification-status" class="status-message" role="status" aria-live="polite"></p>
         <ul id="notification-list" class="notification-list" aria-label="Your notifications"></ul>
       </section>
+
+      <section id="evaluation-workspace" class="inbox" aria-labelledby="evaluation-title" hidden>
+        <div class="inbox-heading">
+          <div>
+            <h3 id="evaluation-title">Evaluation assignments</h3>
+            <p class="section-intro">Score assigned portfolios against the active program rubric.</p>
+          </div>
+          <button id="refresh-evaluations" class="button secondary compact" type="button">Refresh</button>
+        </div>
+        <p id="evaluation-queue-status" class="status-message" role="status" aria-live="polite"></p>
+        <ul id="evaluation-assignment-list" class="notification-list" aria-label="Assigned evaluations"></ul>
+
+        <div id="evaluation-editor" class="evaluation-editor" hidden>
+          <div class="inbox-heading">
+            <div>
+              <h4 id="evaluation-editor-title">Evaluation rubric</h4>
+              <p id="evaluation-editor-subtitle" class="section-intro"></p>
+            </div>
+            <button id="cancel-evaluation" class="button secondary compact" type="button">Close</button>
+          </div>
+          <p class="section-intro">Enter a score for each criterion. Drafts can be edited; submission locks the evaluation and notifies the coordinator. A score is not an accreditation decision.</p>
+          <form id="evaluation-form">
+            <div id="evaluation-criteria" class="criteria-list"></div>
+            <div class="evaluation-actions">
+              <button id="save-evaluation" class="button secondary" type="button">Save draft</button>
+              <button id="submit-evaluation" class="button primary" type="button">Submit evaluation</button>
+            </div>
+            <p id="evaluation-status" class="status-message" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
     </section>
 
     <section id="workflow" class="workflow" aria-labelledby="workflow-title">
