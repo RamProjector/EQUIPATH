@@ -148,6 +148,15 @@ test('public workspace exposes accessible sign-in and notification controls', fu
     }
     assertTrue(str_contains($page, 'assets/js/rubric-configuration.js'), 'Landing page must load the rubric configuration module.');
     assertTrue(!str_contains($rubricScript, 'innerHTML'), 'Rubric data must be rendered as text, not interpreted as markup.');
+    $reportsScript = (string) file_get_contents($root . '/web/assets/js/reports.js');
+    foreach (['../api/reports.php', '../api/export-report.php'] as $endpoint) {
+        assertTrue(str_contains($reportsScript, $endpoint), "Reports workspace is missing API integration: {$endpoint}");
+    }
+    foreach (['id="reports-workspace"', 'id="reports-filter-form"', 'id="reports-summary"', 'id="reports-sections"'] as $expected) {
+        assertTrue(str_contains($page, $expected), "Landing page is missing reports markup: {$expected}");
+    }
+    assertTrue(str_contains($page, 'assets/js/reports.js'), 'Landing page must load the reports module.');
+    assertTrue(!str_contains($reportsScript, 'innerHTML'), 'Report data must be rendered as text, not interpreted as markup.');
     assertTrue(!str_contains($accreditationScript, 'innerHTML'), 'Accreditation data must be rendered as text, not interpreted as markup.');
     assertTrue(str_contains($page, 'assets/js/assessments.js'), 'Landing page must load the assessment client module.');
     assertTrue(str_contains($script, 'message.textContent'), 'Notification message must be rendered as text, not interpreted as markup.');
