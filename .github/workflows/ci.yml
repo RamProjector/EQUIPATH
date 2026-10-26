@@ -117,6 +117,9 @@ jobs:
           DB_NAME: equipath_eteeap
         run: php tests/php/application_screening_integration.php
 
+      - name: Run screening endpoint HTTP guard tests
+        run: php tests/php/screening_endpoint_security.php
+
       - name: Run session security tests
         run: php tests/php/session_security.php
 
