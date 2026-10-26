@@ -8,6 +8,7 @@
     create: "../api/create-application.php",
     documents: "../api/application-documents.php",
     upload: "../api/upload-document.php",
+    submit: "../api/submit-application.php",
     download: "../api/download-document.php"
   };
   const byId = (id) => document.getElementById(id);
@@ -29,6 +30,8 @@
   const uploadForm = byId("applicant-upload-form");
   const uploadButton = byId("applicant-upload-button");
   const uploadHelp = byId("applicant-upload-help");
+  const submitApplicationButton = byId("submit-application-button");
+  const submitApplicationHelp = byId("submit-application-help");
 
   let csrfToken = null;
   let signedIn = false;
@@ -58,12 +61,17 @@
         program_or_period_unavailable: "That program or application period is no longer available. Refresh the options.",
         invalid_application_details: "Choose a valid program and open application period.",
         document_rejected: "The PDF was rejected. Check that it is a valid PDF and that the requirement is active.",
+        required_documents_incomplete: "The required evidence is incomplete.",
+        application_not_submittable: "This application cannot be submitted in its current state or no active coordinator is configured.",
         document_too_large: "The file exceeds the permitted size.",
         service_unavailable: "The service is temporarily unavailable. Please try again later."
       };
       const error = new Error(messages[data?.error] || "The request could not be completed. Please try again.");
       error.code = data?.error;
       error.status = response.status;
+      if (data?.error === "required_documents_incomplete" && Array.isArray(data.missing_requirements)) {
+        error.message += " Missing: " + data.missing_requirements.map(item => item.name).filter(name => typeof name === "string").join(", ") + ".";
+      }
       throw error;
     }
     return data;
@@ -192,8 +200,16 @@
       option.dataset.maxBytes = requirement.max_file_size_bytes === null ? "" : String(requirement.max_file_size_bytes);
       requirementSelect.append(option);
     }
-    requirementSelect.disabled = requirements.length === 0 || !["draft", "needs_correction"].includes(selectedApplication?.application_status);
+    const editable = ["draft", "needs_correction"].includes(selectedApplication?.application_status);
+    requirementSelect.disabled = requirements.length === 0 || !editable;
     uploadButton.disabled = requirementSelect.disabled;
+    submitApplicationButton.disabled = !editable || requirements.length === 0;
+    submitApplicationButton.hidden = !editable;
+    submitApplicationHelp.textContent = !editable
+      ? "This application is not editable or has already been submitted."
+      : requirements.length === 0
+        ? "Submission is blocked until the program has active required-document configuration."
+        : "Submission requires every active required document to have a current pending or accepted version. The server verifies this again.";
     uploadHelp.textContent = requirements.length === 0
       ? "No active document requirements are configured for this program. Contact the coordinator."
       : ["draft", "needs_correction"].includes(selectedApplication?.application_status)
@@ -309,6 +325,51 @@
       busy = false;
       createButton.disabled = programs.length === 0 || periods.length === 0;
       refreshButton.disabled = false;
+    }
+  });
+
+  submitApplicationButton.addEventListener("click", async () => {
+    if (!signedIn || busy || !csrfToken || !selectedApplication) return;
+    if (!["draft", "needs_correction"].includes(selectedApplication.application_status)) {
+      setStatus("Only drafts or applications returned for correction can be submitted.", "error");
+      return;
+    }
+    const confirmed = window.confirm("Submit this application for initial screening? You will not be able to upload more documents unless the college returns it for correction.");
+    if (!confirmed) return;
+
+    busy = true;
+    submitApplicationButton.disabled = true;
+    uploadButton.disabled = true;
+    refreshButton.disabled = true;
+    setStatus("Checking required documents and submitting application…");
+    const submittedApplicationId = selectedApplication.application_id;
+    try {
+      const response = await fetch(urls.submit, {
+        method: "POST", credentials: "same-origin", cache: "no-store",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken
+        },
+        body: JSON.stringify({ application_id: submittedApplicationId })
+      });
+      const data = await readJson(response);
+      await loadApplications();
+      selectedApplication = applications.find(item => item.application_id === submittedApplicationId) || null;
+      if (selectedApplication) {
+        await loadDocuments(selectedApplication);
+        renderRequirements();
+      } else {
+        documentPanel.hidden = true;
+      }
+      setStatus("Application " + data.application.application_number + " was submitted for screening.", "success");
+    } catch (error) {
+      setStatus(error.message || "Could not submit application.", "error");
+      renderRequirements();
+    } finally {
+      busy = false;
+      refreshButton.disabled = false;
+      renderRequirements();
     }
   });
 
