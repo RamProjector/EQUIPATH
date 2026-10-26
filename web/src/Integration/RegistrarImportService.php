@@ -207,7 +207,7 @@ final class RegistrarImportService
                     (started_by, source_system, batch_status, total_rows, accepted_rows, rejected_rows, error_summary, started_at)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
             );
-            $batch->bind_param('isiiiiss', $startedBy, $sourceSystem, $batchStatus, $total, $zero, $zero, $emptySummary, $startedAt);
+            $batch->bind_param('issiiiss', $startedBy, $sourceSystem, $batchStatus, $total, $zero, $zero, $emptySummary, $startedAt);
             $batch->execute();
             $batchId = (int) $db->insert_id;
             $batch->close();
@@ -247,7 +247,7 @@ final class RegistrarImportService
                      completed_at = ?
                  WHERE integration_batch_id = ?'
             );
-            $update->bind_param('sisssi', $batchStatus, $accepted, $rejected, $errorSummary, $completedAt, $batchId);
+            $update->bind_param('siissi', $batchStatus, $accepted, $rejected, $errorSummary, $completedAt, $batchId);
             $update->execute();
             $update->close();
 
