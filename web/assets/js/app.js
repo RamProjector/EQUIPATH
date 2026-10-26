@@ -6,6 +6,9 @@
   const logoutUrl = "../api/logout.php";
   const notificationsUrl = "../api/notifications.php";
   const markReadUrl = "../api/mark-notification-read.php";
+  const evaluationAssignmentsUrl = "../api/evaluation-assignments.php";
+  const evaluationRubricUrl = "../api/evaluation-rubric.php";
+  const saveEvaluationUrl = "../api/save-evaluation.php";
 
   const byId = (id) => document.getElementById(id);
   const loginForm = byId("login-form");
@@ -18,9 +21,23 @@
   const notificationStatus = byId("notification-status");
   const logoutButton = byId("logout-button");
   const refreshButton = byId("refresh-notifications");
+  const evaluationWorkspace = byId("evaluation-workspace");
+  const evaluationQueueStatus = byId("evaluation-queue-status");
+  const evaluationAssignmentList = byId("evaluation-assignment-list");
+  const refreshEvaluationsButton = byId("refresh-evaluations");
+  const evaluationEditor = byId("evaluation-editor");
+  const evaluationEditorTitle = byId("evaluation-editor-title");
+  const evaluationEditorSubtitle = byId("evaluation-editor-subtitle");
+  const evaluationCriteria = byId("evaluation-criteria");
+  const evaluationForm = byId("evaluation-form");
+  const evaluationStatus = byId("evaluation-status");
+  const saveEvaluationButton = byId("save-evaluation");
+  const submitEvaluationButton = byId("submit-evaluation");
+  const cancelEvaluationButton = byId("cancel-evaluation");
 
   let csrfToken = null;
   let busy = false;
+  let currentEvaluation = null;
 
   async function readJson(response) {
     let data;
@@ -38,7 +55,10 @@
         access_denied: "This account is not authorized to perform that action.",
         service_unavailable: "The service is temporarily unavailable. Please try again later."
       };
-      throw new Error(messages[data?.error] || "The request could not be completed. Please try again.");
+      const error = new Error(messages[data?.error] || "The request could not be completed. Please try again.");
+      error.code = data?.error;
+      error.status = response.status;
+      throw error;
     }
     return data;
   }
@@ -180,6 +200,235 @@
     }
   }
 
+  function renderEvaluationAssignments(items) {
+    evaluationAssignmentList.replaceChildren();
+    if (!Array.isArray(items) || items.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "empty-state";
+      empty.textContent = "No active evaluation assignments are waiting for you.";
+      evaluationAssignmentList.append(empty);
+      return;
+    }
+
+    for (const item of items) {
+      const row = document.createElement("li");
+      row.className = "notification-item";
+      const content = document.createElement("div");
+      content.className = "notification-content";
+      const title = document.createElement("h4");
+      title.className = "notification-title";
+      title.textContent = typeof item.application_number === "string" ? item.application_number : "Application";
+      const program = document.createElement("p");
+      program.className = "notification-message";
+      program.textContent = item.program && typeof item.program.name === "string" ? item.program.name : "Program unavailable";
+      const meta = document.createElement("p");
+      meta.className = "notification-meta";
+      meta.textContent = "Assignment: " + String(item.assignment_status || "unknown");
+      content.append(title, program, meta);
+      row.append(content);
+
+      if (item.assignment_status === "submitted") {
+        const complete = document.createElement("span");
+        complete.className = "assignment-state";
+        complete.textContent = "Submitted";
+        row.append(complete);
+      } else if (item.active_rubric_count !== 1 || !Number.isSafeInteger(item.active_rubric_id)) {
+        const warning = document.createElement("p");
+        warning.className = "rubric-warning";
+        warning.textContent = item.active_rubric_count === 0
+          ? "No active rubric is configured for this program. Contact the coordinator."
+          : "More than one active rubric is configured. Scoring is paused until the coordinator resolves it.";
+        row.append(warning);
+      } else if (Number.isSafeInteger(item.evaluator_assignment_id) && item.evaluator_assignment_id > 0) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "button secondary compact";
+        button.textContent = item.assignment_status === "in_progress" ? "Continue evaluation" : "Open evaluation";
+        button.addEventListener("click", () => openEvaluation(item.evaluator_assignment_id));
+        row.append(button);
+      }
+      evaluationAssignmentList.append(row);
+    }
+  }
+
+  async function loadEvaluationAssignments() {
+    refreshEvaluationsButton.disabled = true;
+    setStatus(evaluationQueueStatus, "Loading assignments…");
+    try {
+      const response = await fetch(evaluationAssignmentsUrl, {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { "Accept": "application/json" }
+      });
+      const data = await readJson(response);
+      evaluationWorkspace.hidden = false;
+      renderEvaluationAssignments(data.assignments);
+      const count = Array.isArray(data.assignments) ? data.assignments.length : 0;
+      setStatus(evaluationQueueStatus, count === 1 ? "1 assignment" : count + " assignments", "success");
+    } catch (error) {
+      if (error.code === "access_denied") {
+        evaluationWorkspace.hidden = true;
+        return;
+      }
+      setStatus(evaluationQueueStatus, error.message || "Could not load evaluation assignments.", "error");
+      if (error.code === "authentication_required") {
+        workspace.hidden = true;
+        loginForm.hidden = false;
+      }
+    } finally {
+      refreshEvaluationsButton.disabled = false;
+    }
+  }
+
+  async function openEvaluation(assignmentId) {
+    currentEvaluation = null;
+    evaluationEditor.hidden = false;
+    evaluationCriteria.replaceChildren();
+    setStatus(evaluationStatus, "Loading rubric…");
+    try {
+      const response = await fetch(evaluationRubricUrl + "?evaluator_assignment_id=" + encodeURIComponent(String(assignmentId)), {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { "Accept": "application/json" }
+      });
+      const data = await readJson(response);
+      currentEvaluation = {
+        assignmentId: data.assignment.evaluator_assignment_id,
+        rubricId: data.rubric.rubric_id,
+        criteria: data.criteria
+      };
+      evaluationEditorTitle.textContent = "Evaluate " + data.assignment.application_number;
+      evaluationEditorSubtitle.textContent = data.assignment.program.name + " · " + data.rubric.rubric_name + " · Version " + data.rubric.version_number;
+      evaluationCriteria.replaceChildren();
+
+      for (const criterion of data.criteria) {
+        const card = document.createElement("section");
+        card.className = "criterion-card";
+        const heading = document.createElement("h5");
+        heading.textContent = criterion.criterion_name;
+        const description = document.createElement("p");
+        description.className = "criterion-description";
+        description.textContent = criterion.description || criterion.criterion_code;
+        const detail = document.createElement("p");
+        detail.className = "notification-meta";
+        detail.textContent = "Maximum score: " + criterion.max_score + " · Weight: " + criterion.weight;
+
+        const scoreLabel = document.createElement("label");
+        const scoreId = "criterion-score-" + criterion.criterion_id;
+        scoreLabel.htmlFor = scoreId;
+        scoreLabel.textContent = "Score";
+        const scoreInput = document.createElement("input");
+        scoreInput.id = scoreId;
+        scoreInput.className = "criterion-score";
+        scoreInput.type = "number";
+        scoreInput.min = "0";
+        scoreInput.max = String(criterion.max_score);
+        scoreInput.step = "0.01";
+        scoreInput.inputMode = "decimal";
+        scoreInput.value = criterion.score === null ? "" : String(criterion.score);
+        scoreInput.dataset.criterionId = String(criterion.criterion_id);
+        scoreInput.setAttribute("aria-describedby", scoreId + "-hint");
+        const hint = document.createElement("span");
+        hint.id = scoreId + "-hint";
+        hint.className = "field-hint";
+        hint.textContent = "Enter a value from 0 to " + criterion.max_score + ".";
+
+        const feedbackLabel = document.createElement("label");
+        const feedbackId = "criterion-feedback-" + criterion.criterion_id;
+        feedbackLabel.htmlFor = feedbackId;
+        feedbackLabel.textContent = "Feedback (optional)";
+        const feedbackInput = document.createElement("textarea");
+        feedbackInput.id = feedbackId;
+        feedbackInput.className = "criterion-feedback";
+        feedbackInput.maxLength = 4000;
+        feedbackInput.rows = 3;
+        feedbackInput.value = typeof criterion.feedback === "string" ? criterion.feedback : "";
+
+        card.append(heading, description, detail, scoreLabel, scoreInput, hint, feedbackLabel, feedbackInput);
+        evaluationCriteria.append(card);
+      }
+      setStatus(evaluationStatus, "Rubric ready. Save a draft or submit when every criterion is scored.");
+    } catch (error) {
+      setStatus(evaluationStatus, error.message || "Could not load the rubric.", "error");
+    }
+  }
+
+  function collectEvaluationScores(requireAll) {
+    const scores = [];
+    const inputs = Array.from(evaluationCriteria.querySelectorAll(".criterion-score"));
+    for (const input of inputs) {
+      const criterionId = Number(input.dataset.criterionId);
+      const feedbackInput = byId("criterion-feedback-" + input.dataset.criterionId);
+      const value = input.value.trim();
+      const feedback = feedbackInput ? feedbackInput.value : "";
+      if (value === "") {
+        if (requireAll) {
+          input.focus();
+          throw new Error("Enter a score for every criterion before submitting.");
+        }
+        if (feedback.trim() !== "") {
+          feedbackInput.focus();
+          throw new Error("Enter a score before saving feedback for that criterion.");
+        }
+        continue;
+      }
+      const score = Number(value);
+      const maximum = Number(input.max);
+      if (!Number.isFinite(score) || score < 0 || score > maximum || !/^\d+(?:\.\d{1,2})?$/.test(value)) {
+        input.focus();
+        throw new Error("Each score must be between 0 and its maximum, with at most two decimal places.");
+      }
+      scores.push({ criterion_id: criterionId, score: value, feedback });
+    }
+    if (scores.length === 0) throw new Error("Enter at least one criterion score before saving.");
+    return scores;
+  }
+
+  async function sendEvaluation(submit) {
+    if (!currentEvaluation || !csrfToken) return;
+    saveEvaluationButton.disabled = true;
+    submitEvaluationButton.disabled = true;
+    try {
+      const scores = collectEvaluationScores(submit);
+      setStatus(evaluationStatus, submit ? "Submitting evaluation…" : "Saving draft…");
+      const response = await fetch(saveEvaluationUrl, {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken
+        },
+        body: JSON.stringify({
+          evaluator_assignment_id: currentEvaluation.assignmentId,
+          rubric_id: currentEvaluation.rubricId,
+          scores,
+          submit
+        })
+      });
+      const data = await readJson(response);
+      if (submit) {
+        const percentage = data.evaluation.weighted_percentage;
+        setStatus(evaluationStatus, "Evaluation submitted" + (typeof percentage === "number" ? ". Weighted result: " + percentage.toFixed(2) + "%" : "") + ". This is not an accreditation decision.", "success");
+        currentEvaluation = null;
+        evaluationEditor.hidden = true;
+        await loadEvaluationAssignments();
+      } else {
+        const assignmentId = currentEvaluation.assignmentId;
+        await openEvaluation(assignmentId);
+        setStatus(evaluationStatus, "Draft saved. You can continue editing before submission.", "success");
+      }
+    } catch (error) {
+      setStatus(evaluationStatus, error.message || "Could not save the evaluation.", "error");
+    } finally {
+      saveEvaluationButton.disabled = false;
+      submitEvaluationButton.disabled = false;
+    }
+  }
+
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (busy) return;
@@ -214,6 +463,7 @@
       workspace.hidden = false;
       byId("password").value = "";
       await loadNotifications();
+      await loadEvaluationAssignments();
       workspace.focus?.();
     } catch (error) {
       setStatus(loginStatus, error.message || "Sign-in failed.", "error");
@@ -240,6 +490,11 @@
       workspace.hidden = true;
       loginForm.hidden = false;
       notificationList.replaceChildren();
+      evaluationWorkspace.hidden = true;
+      evaluationEditor.hidden = true;
+      evaluationAssignmentList.replaceChildren();
+      evaluationCriteria.replaceChildren();
+      currentEvaluation = null;
       setStatus(loginStatus, "You have signed out.", "success");
       await refreshCsrfToken();
     } catch (error) {
@@ -250,6 +505,14 @@
   });
 
   refreshButton.addEventListener("click", loadNotifications);
+  refreshEvaluationsButton.addEventListener("click", loadEvaluationAssignments);
+  saveEvaluationButton.addEventListener("click", () => sendEvaluation(false));
+  submitEvaluationButton.addEventListener("click", () => sendEvaluation(true));
+  cancelEvaluationButton.addEventListener("click", () => {
+    currentEvaluation = null;
+    evaluationEditor.hidden = true;
+    evaluationCriteria.replaceChildren();
+  });
 
   refreshCsrfToken().catch((error) => {
     setStatus(loginStatus, error.message || "Sign-in is currently unavailable.", "error");
