@@ -239,6 +239,9 @@ jobs:
 
       - name: Run registrar import endpoint HTTP guard tests
         run: php tests/php/registrar_import_endpoint_security.php
+      - name: Run registrar preview token lifecycle tests
+        run: php tests/php/registrar_import_preview_token.php
+
       - name: Run registrar import parser validation tests
         run: php tests/php/registrar_import_service_validation.php
 
