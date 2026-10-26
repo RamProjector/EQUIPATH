@@ -50,6 +50,9 @@ jobs:
       - name: Run PHP smoke tests
         run: php tests/php/run.php
 
+      - name: Run document upload validation tests
+        run: php tests/php/document_upload_validation.php
+
       - name: Check database schema safety contract
         run: php tests/php/schema_contract.php
 
