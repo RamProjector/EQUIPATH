@@ -12,9 +12,8 @@ $periodId = null;
 $applicationId = null;
 $requirementIds = [];
 
-function submissionEnsureRole(mysqli $db, array &$createdRoleIds): int
+function submissionEnsureRole(mysqli $db, string $key, string $label, array &$createdRoleIds): int
 {
-    $key = 'coordinator';
     $find = $db->prepare('SELECT role_id FROM roles WHERE role_key = ? LIMIT 1');
     $find->bind_param('s', $key);
     $find->execute();
@@ -23,7 +22,6 @@ function submissionEnsureRole(mysqli $db, array &$createdRoleIds): int
     if (is_array($row)) {
         return (int) $row['role_id'];
     }
-    $label = 'Coordinator';
     $insert = $db->prepare('INSERT INTO roles (role_key, display_name) VALUES (?, ?)');
     $insert->bind_param('ss', $key, $label);
     $insert->execute();
@@ -61,7 +59,8 @@ try {
     );
     $db->set_charset('utf8mb4');
     $suffix = bin2hex(random_bytes(8));
-    $coordinatorRoleId = submissionEnsureRole($db, $createdRoleIds);
+    $coordinatorRoleId = submissionEnsureRole($db, 'coordinator', 'Coordinator', $createdRoleIds);
+    $applicantRoleId = submissionEnsureRole($db, 'applicant', 'Applicant', $createdRoleIds);
 
     foreach (['applicant', 'coordinator'] as $kind) {
         $email = $kind . '-submission-' . $suffix . '@example.invalid';
@@ -77,16 +76,7 @@ try {
         $userIds[$kind] = (int) $db->insert_id;
         $insert->close();
     }
-    $applicantRoleKey = 'applicant';
-    $roleQuery = $db->prepare('SELECT role_id FROM roles WHERE role_key = ? LIMIT 1');
-    $roleQuery->bind_param('s', $applicantRoleKey);
-    $roleQuery->execute();
-    $applicantRole = $roleQuery->get_result()->fetch_assoc();
-    $roleQuery->close();
-    if (!is_array($applicantRole)) {
-        throw new RuntimeException('Applicant role must exist in the initial schema seed.');
-    }
-    foreach ([[$userIds['applicant'], (int) $applicantRole['role_id']], [$userIds['coordinator'], $coordinatorRoleId]] as [$userId, $roleId]) {
+    foreach ([[$userIds['applicant'], $applicantRoleId], [$userIds['coordinator'], $coordinatorRoleId]] as [$userId, $roleId]) {
         $assign = $db->prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)');
         $assign->bind_param('ii', $userId, $roleId);
         $assign->execute();
