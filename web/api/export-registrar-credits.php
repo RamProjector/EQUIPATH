@@ -34,6 +34,7 @@ function registrarCsvCell(string $value): string
 }
 
 $db = null;
+$csvOutputStarted = false;
 try {
     $sessions = new SessionManager();
     $sessions->start();
@@ -82,6 +83,8 @@ try {
     header('Content-Disposition: attachment; filename="equipath-approved-credits-' . $filenameRange . '.csv"');
     $output = fopen('php://output', 'w');
     if ($output === false) throw new RuntimeException('Unable to stream registrar export.');
+    // Once CSV output begins, never append a JSON error document to a partial CSV.
+    $csvOutputStarted = true;
     fputcsv($output, ['application_number', 'program_code', 'course_code', 'course_title', 'approved_credits', 'decision_at'], ',', '"', '');
     while ($statement->fetch()) {
         fputcsv($output, [
@@ -109,9 +112,15 @@ try {
     echo json_encode(['ok' => false, 'error' => 'access_denied']);
 } catch (Throwable $error) {
     error_log('EquiPath registrar approved-credit export failure: ' . get_class($error));
-    header('Content-Type: application/json; charset=utf-8');
-    http_response_code(500);
-    echo json_encode(['ok' => false, 'error' => 'service_unavailable']);
+    if ($csvOutputStarted) {
+        // The CSV may already be partially streamed; mark failure when headers
+        // are still mutable, but do not corrupt the download by appending JSON.
+        if (!headers_sent()) http_response_code(500);
+    } else {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'error' => 'service_unavailable']);
+    }
 } finally {
     if ($db instanceof mysqli) $db->close();
 }
