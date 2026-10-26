@@ -11,7 +11,7 @@ if ($webRoot === false) throw new RuntimeException('Unable to resolve web root.'
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $db = null;
-$createdRoleId = null;
+$createdRoleIds = [];
 $userIds = [];
 $sessionDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'equipath-registrar-auth-' . bin2hex(random_bytes(8));
 $server = null;
@@ -82,7 +82,7 @@ try {
             $insert->bind_param('ss', $key, $label);
             $insert->execute();
             $roleIds[$key] = (int) $db->insert_id;
-            if ($key === 'registrar') $createdRoleId = $roleIds[$key];
+            $createdRoleIds[] = $roleIds[$key];
             $insert->close();
         }
     }
@@ -199,9 +199,9 @@ try {
             $delete->execute();
             $delete->close();
         }
-        if ($createdRoleId !== null) {
+        foreach ($createdRoleIds as $roleId) {
             $delete = $db->prepare('DELETE FROM roles WHERE role_id = ?');
-            $delete->bind_param('i', $createdRoleId);
+            $delete->bind_param('i', $roleId);
             $delete->execute();
             $delete->close();
         }
