@@ -10,7 +10,8 @@ declare(strict_types=1);
   <meta name="theme-color" content="#f5f8fa">
   <title>EquiPath | ADFC ETEEAP</title>
   <link rel="stylesheet" href="../assets/css/app.css">
-  <script src="../assets/js/app.js" defer></script>\n  <script src="../assets/js/applicant-applications.js" defer></script>
+  <script src="../assets/js/app.js" defer></script>
+  <script src="../assets/js/applicant-applications.js" defer></script>
   <script src="../assets/js/assessments.js" defer></script>
   <script src="../assets/js/credit-recommendations.js" defer></script>
   <script src="../assets/js/accreditation.js" defer></script>
