@@ -146,21 +146,18 @@ final class AccreditationDecisionService
             if ($decision === 'approved') {
                 foreach ($normalizedCredits as $credit) {
                     $recommendationQuery = $db->prepare(
-                        'SELECT COUNT(*) AS total,
-                                MAX(recommended_credits) AS maximum_recommended,
-                                MAX(CASE WHEN course_title = ? THEN 1 ELSE 0 END) AS title_matches
+                        'SELECT COUNT(*) AS total, MAX(recommended_credits) AS maximum_recommended
                          FROM credit_recommendations
-                         WHERE application_id = ? AND UPPER(course_code) = ?'
+                         WHERE application_id = ? AND UPPER(course_code) = ? AND course_title = ?'
                     );
-                    $courseTitle = $credit['course_title'];
                     $courseCode = $credit['course_code'];
-                    $recommendationQuery->bind_param('sis', $courseTitle, $applicationId, $courseCode);
+                    $courseTitle = $credit['course_title'];
+                    $recommendationQuery->bind_param('iss', $applicationId, $courseCode, $courseTitle);
                     $recommendationQuery->execute();
                     $recommendation = $recommendationQuery->get_result()->fetch_assoc();
                     $recommendationQuery->close();
 
-                    if ((int) ($recommendation['total'] ?? 0) < 1 ||
-                        (int) ($recommendation['title_matches'] ?? 0) !== 1) {
+                    if ((int) ($recommendation['total'] ?? 0) < 1) {
                         throw new DomainException('Every approved course must match a submitted recommendation for this application.');
                     }
                     if ((float) $credit['approved_credits'] > (float) $recommendation['maximum_recommended']) {
