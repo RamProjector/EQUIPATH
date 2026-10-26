@@ -61,6 +61,7 @@ jobs:
           node --check web/assets/js/assessments.js
           node --check web/assets/js/credit-recommendations.js
           node --check web/assets/js/accreditation.js
+          node --check web/assets/js/registrar-integration.js
 
       - name: Run document upload validation tests
         run: php tests/php/document_upload_validation.php
