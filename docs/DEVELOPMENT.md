@@ -2,7 +2,7 @@
 
 ## Current status
 
-This is an early foundation, not a complete application. It includes the public landing page, a deliberately limited API health endpoint, a supplementary WinForms API-connectivity screen, relational database migrations, credential verification, HTTP session endpoints, login throttling, and server-side authorization primitives. Application listing and draft creation APIs are implemented. A protected PDF evidence-upload endpoint is being added; evaluation workflows, accreditation decision enforcement, notifications, and registrar integration are not implemented yet.
+This is an early foundation, not a complete application. It includes the public landing page, a deliberately limited API health endpoint, a supplementary WinForms API-connectivity screen, relational database migrations, credential verification, HTTP session endpoints, login throttling, and server-side authorization primitives. Application listing and draft creation APIs are implemented. Protected PDF evidence upload/download and a coordinator-only screening API foundation are present; full staff/applicant screens, evaluation workflows, assessment handling, accreditation decision enforcement, and registrar integration are not implemented yet.
 
 Do not use real applicant records or portfolio documents in this scaffold.
 
@@ -37,7 +37,7 @@ From the repository root:
     php tests/php/schema_contract.php
     php tests/php/session_security.php\n    php tests/php/authorization_integration.php
 
-For database integration tests, apply migrations 001 and 002 to a disposable MySQL 8.4 database and set DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, and a random AUTH_RATE_LIMIT_SECRET of at least 32 characters. CI provisions an isolated MySQL service, applies both migrations, and runs database, authentication, authorization, session-security, login-throttling, document-upload input-validation, and authorized document-download integration tests automatically.
+For database integration tests, apply migrations 001 and 002 to a disposable MySQL 8.4 database and set DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, and a random AUTH_RATE_LIMIT_SECRET of at least 32 characters. CI provisions an isolated MySQL service, applies both migrations, and runs database, authentication, authorization, session-security, login-throttling, screening, document-upload input-validation, and authorized document-download integration tests automatically.
 
 The initial schema covers configurable program requirements and approved credit records as well as application workflow data. The current database tests check table creation, unique email enforcement, and rejection of invalid foreign-key references. Authentication integration tests verify valid active-account credentials, wrong passwords, unknown email addresses, pending/disabled accounts, empty inputs, safe return values, and successful-login timestamps. They do not prove every workflow, authorization rule, concurrency case, backup, or restoration scenario.
 
