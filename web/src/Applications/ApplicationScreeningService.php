@@ -73,11 +73,9 @@ final class ApplicationScreeningService
                 'UPDATE applications SET application_status = ? WHERE application_id = ?'
             );
             $update->bind_param('si', $targetStatus, $applicationId);
+            // MySQL may report zero affected rows when a re-review keeps the
+            // same status; successful execution is the relevant invariant.
             $update->execute();
-            if ($update->affected_rows !== 1) {
-                $update->close();
-                throw new RuntimeException('Application status was not updated.');
-            }
             $update->close();
 
             $reason = 'Screening outcome: ' . $outcome;
