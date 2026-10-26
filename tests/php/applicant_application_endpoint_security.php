@@ -59,6 +59,7 @@ try {
     $optionsUrl = $base . 'application-options.php';
     $applicationsUrl = $base . 'applications.php';
     $createUrl = $base . 'create-application.php';
+    $submitUrl = $base . 'submit-application.php';
     $documentsUrl = $base . 'application-documents.php?application_id=1';
     $uploadUrl = $base . 'upload-document.php';
     $ready = false;
@@ -74,7 +75,7 @@ try {
         throw new RuntimeException('HTTP server did not become ready for applicant endpoint tests.');
     }
 
-    foreach ([$createUrl => 'application creation', $uploadUrl => 'document upload'] as $url => $label) {
+    foreach ([$createUrl => 'application creation', $submitUrl => 'application submission', $uploadUrl => 'document upload'] as $url => $label) {
         [$status, $body] = requestApplicantEndpoint($url, 'GET');
         $json = json_decode($body, true);
         if ($status !== 405 || ($json['error'] ?? null) !== 'method_not_allowed') {
@@ -113,6 +114,16 @@ try {
     $csrfJson = json_decode($csrfBody, true);
     if ($csrfStatus !== 403 || ($csrfJson['error'] ?? null) !== 'csrf_validation_failed') {
         throw new RuntimeException('Application creation without CSRF was not denied before authentication/database access.');
+    }
+
+    $submitBody = json_encode(['application_id' => 1], JSON_THROW_ON_ERROR);
+    [$submitCsrfStatus, $submitCsrfBody] = requestApplicantEndpoint($submitUrl, 'POST', $submitBody, [
+        'Content-Type: application/json',
+        'Content-Length: ' . strlen($submitBody),
+    ]);
+    $submitCsrfJson = json_decode($submitCsrfBody, true);
+    if ($submitCsrfStatus !== 403 || ($submitCsrfJson['error'] ?? null) !== 'csrf_validation_failed') {
+        throw new RuntimeException('Application submission without CSRF was not denied before authentication/database access.');
     }
 
     fwrite(STDOUT, "PASS: applicant application endpoint HTTP guards (methods, authentication and identifier validation).\n");
