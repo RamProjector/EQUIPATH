@@ -42,8 +42,8 @@ final class AssessmentService
 
         $db->begin_transaction();
         try {
-            $clock = $db->query('SELECT CURRENT_TIMESTAMP AS current_time')->fetch_assoc();
-            $databaseNow = (string) ($clock['current_time'] ?? '');
+            $clock = $db->query('SELECT CURRENT_TIMESTAMP AS database_now')->fetch_assoc();
+            $databaseNow = (string) ($clock['database_now'] ?? '');
             if ($databaseNow !== '' && $startsAt <= $databaseNow) {
                 throw new InvalidArgumentException('Assessment start time must be in the future.');
             }
