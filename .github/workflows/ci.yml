@@ -53,6 +53,7 @@ jobs:
       - name: Check web JavaScript syntax
         run: |
           node --check web/assets/js/app.js
+          node --check web/assets/js/applicant-applications.js
           node --check web/assets/js/assessments.js
           node --check web/assets/js/credit-recommendations.js
           node --check web/assets/js/accreditation.js
@@ -62,6 +63,8 @@ jobs:
 
       - name: Run upload endpoint HTTP guard tests
         run: php tests/php/upload_endpoint_security.php
+\n      - name: Run applicant application endpoint HTTP guard tests
+        run: php tests/php/applicant_application_endpoint_security.php
 
       - name: Check database schema safety contract
         run: php tests/php/schema_contract.php
