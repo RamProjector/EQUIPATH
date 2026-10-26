@@ -135,7 +135,7 @@
     renderSummary(report.totals);
     sections.replaceChildren();
     const definitions = [
-      ["Applications by status", "applications_by_status"],
+      ["Current status of applications created in period", "applications_by_status"],
       ["Applications by program", "applications_by_program"],
       ["Submissions by month", "submissions_by_month"],
       ["Screening outcomes", "screening_outcomes"],
