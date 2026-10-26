@@ -38,6 +38,8 @@ function requestUploadEndpoint(string $url, string $method, ?string $body = null
     return [$status, is_string($response) ? $response : ''];
 }
 
+$exitCode = 0;
+
 try {
     $command = [
         PHP_BINARY, '-d', 'session.save_path=' . $sessionDir,
@@ -103,7 +105,7 @@ try {
     fwrite(STDOUT, "PASS: upload endpoint HTTP guards (GET rejected; multipart POST without CSRF token denied).\n");
 } catch (Throwable $error) {
     fwrite(STDERR, 'FAIL: upload endpoint HTTP guards — ' . $error->getMessage() . "\n");
-    exit(1);
+    $exitCode = 1;
 } finally {
     if (is_resource($server)) {
         proc_terminate($server);
@@ -116,3 +118,5 @@ try {
     }
     @rmdir($sessionDir);
 }
+
+exit($exitCode);
