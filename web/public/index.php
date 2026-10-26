@@ -11,6 +11,7 @@ declare(strict_types=1);
   <title>EquiPath | ADFC ETEEAP</title>
   <link rel="stylesheet" href="../assets/css/app.css">
   <script src="../assets/js/app.js" defer></script>
+  <script src="../assets/js/applicant-applications.js" defer></script>
   <script src="../assets/js/assessments.js" defer></script>
   <script src="../assets/js/credit-recommendations.js" defer></script>
   <script src="../assets/js/accreditation.js" defer></script>
@@ -72,6 +73,53 @@ declare(strict_types=1);
         </div>
         <p id="notification-status" class="status-message" role="status" aria-live="polite"></p>
         <ul id="notification-list" class="notification-list" aria-label="Your notifications"></ul>
+      </section>
+
+      <section id="applicant-workspace" class="inbox" aria-labelledby="applicant-title" hidden>
+        <div class="inbox-heading">
+          <div>
+            <h3 id="applicant-title">My applications</h3>
+            <p class="section-intro">Start an application during an open period, track its status, and upload required PDF evidence.</p>
+          </div>
+          <button id="refresh-applications" class="button secondary compact" type="button">Refresh</button>
+        </div>
+        <p id="applicant-status" class="status-message" role="status" aria-live="polite"></p>
+        <ul id="applicant-application-list" class="notification-list" aria-label="Your applications"></ul>
+        <div id="new-application-panel" class="evaluation-editor">
+          <h4>Start an application</h4>
+          <form id="new-application-form" class="assessment-form">
+            <label for="new-application-program">Program</label>
+            <select id="new-application-program" required>
+              <option value="">Choose an active program</option>
+            </select>
+            <label for="new-application-period">Application period</label>
+            <select id="new-application-period" required>
+              <option value="">Choose an open period</option>
+            </select>
+            <p id="application-options-help" class="field-hint"></p>
+            <button id="create-application-button" class="button primary" type="submit">Create draft</button>
+          </form>
+        </div>
+        <div id="applicant-document-panel" class="evaluation-editor" hidden>
+          <div class="inbox-heading">
+            <div>
+              <h4 id="applicant-document-title">Application documents</h4>
+              <p id="applicant-document-subtitle" class="section-intro"></p>
+            </div>
+            <button id="close-applicant-documents" class="button secondary compact" type="button">Close</button>
+          </div>
+          <ul id="applicant-document-list" class="notification-list" aria-label="Uploaded application documents"></ul>
+          <form id="applicant-upload-form" class="assessment-form" enctype="multipart/form-data">
+            <label for="applicant-document-type">Document requirement</label>
+            <select id="applicant-document-type" required>
+              <option value="">Choose a requirement</option>
+            </select>
+            <label for="applicant-document-file">PDF evidence (maximum 10 MiB, or lower if the requirement sets a limit)</label>
+            <input id="applicant-document-file" type="file" accept="application/pdf,.pdf" required>
+            <button id="applicant-upload-button" class="button primary" type="submit">Upload PDF</button>
+            <p id="applicant-upload-help" class="field-hint">Only PDF is accepted. Uploaded documents are private; uploads are not automatically malware-scanned.</p>
+          </form>
+        </div>
       </section>
 
       <section id="evaluation-workspace" class="inbox" aria-labelledby="evaluation-title" hidden>
