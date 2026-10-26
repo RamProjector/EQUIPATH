@@ -369,8 +369,7 @@
     } finally {
       busy = false;
       refreshButton.disabled = false;
-      uploadButton.disabled = requirementSelect.disabled;
-      submitApplicationButton.disabled = !selectedApplication || !["draft", "needs_correction"].includes(selectedApplication.application_status);
+      renderRequirements();
     }
   });
 
