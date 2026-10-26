@@ -149,6 +149,41 @@ try {
     $count->close();
     registrarIntegrationAssert($mappingCount === 1, 'Repeating an import must not duplicate the external mapping.');
 
+    // Simulate local accreditation data changing after a registrar preview.
+    // Commit must re-run reconciliation and refuse to map a now-mismatched credit.
+    $staleExternal = $externalId . '-STALE';
+    $staleRows = [[
+        'external_record_id' => $staleExternal,
+        'application_number' => $applicationNumber,
+        'course_code' => $courseCode,
+        'course_title' => $courseTitle,
+        'approved_credits' => $credits,
+    ]];
+    $stalePreview = $service->previewRows($db, $sourceSystem, $staleRows);
+    registrarIntegrationAssert($stalePreview[0]['status'] === 'ready', 'A new external ID should preview as ready before the local credit changes.');
+    $change = $db->prepare('UPDATE accredited_credits SET approved_credits = ? WHERE accredited_credit_id = ?');
+    $changedCredits = '4.00';
+    $change->bind_param('si', $changedCredits, $creditId);
+    $change->execute();
+    $change->close();
+    try {
+        $staleResult = $service->commit($db, $userId, $sourceSystem, $staleRows);
+        $batchIds[] = $staleResult['batch_id'];
+        registrarIntegrationAssert($staleResult['accepted_rows'] === 0 && $staleResult['rejected_rows'] === 1, 'Commit must reject a row whose approved credit changed after preview.');
+        $check = $db->prepare('SELECT COUNT(*) AS count FROM external_record_mappings WHERE source_system = ? AND external_record_id = ?');
+        $check->bind_param('ss', $sourceSystem, $staleExternal);
+        $check->execute();
+        $staleMappingCount = (int) $check->get_result()->fetch_assoc()['count'];
+        $check->close();
+        registrarIntegrationAssert($staleMappingCount === 0, 'A stale preview must not create an external mapping.');
+    } finally {
+        $restoreCredits = '3.00';
+        $restore = $db->prepare('UPDATE accredited_credits SET approved_credits = ? WHERE accredited_credit_id = ?');
+        $restore->bind_param('si', $restoreCredits, $creditId);
+        $restore->execute();
+        $restore->close();
+    }
+
     // Force the audit write to fail and prove the import transaction rolls back its batch and mapping.
     $db->query(
         "CREATE TRIGGER `{$triggerName}` BEFORE INSERT ON audit_logs
