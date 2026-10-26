@@ -230,12 +230,11 @@
   }
 
   function updateExportUrl() {
-    if (!exportFrom.value || !exportTo.value) {
-      exportLink.href = "../api/export-registrar-credits.php";
-      return;
-    }
-    const params = new URLSearchParams({ from: exportFrom.value, to: exportTo.value });
-    exportLink.href = "../api/export-registrar-credits.php?" + params.toString();
+    const params = new URLSearchParams();
+    if (exportFrom.value) params.set("from", exportFrom.value);
+    if (exportTo.value) params.set("to", exportTo.value);
+    const query = params.toString();
+    exportLink.href = "../api/export-registrar-credits.php" + (query ? "?" + query : "");
   }
 
   importForm.addEventListener("submit", previewImport);
