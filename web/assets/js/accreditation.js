@@ -397,7 +397,11 @@
     }
   });
 
-  refreshButton.addEventListener("click", () => loadCandidates(applicationSelect.value ? Number(applicationSelect.value) : null));
+  refreshButton.addEventListener("click", async () => {
+    const selectedId = applicationSelect.value ? Number(applicationSelect.value) : null;
+    await loadCandidates(selectedId);
+    if (applicationSelect.value && selectedId !== null) await loadApplication(selectedId);
+  });
 
   document.addEventListener("equipath:authenticated", async () => {
     signedIn = true;
