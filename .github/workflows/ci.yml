@@ -51,7 +51,9 @@ jobs:
         run: php tests/php/run.php
 
       - name: Check web JavaScript syntax
-        run: node --check web/assets/js/app.js
+        run: |
+          node --check web/assets/js/app.js
+          node --check web/assets/js/assessments.js
 
       - name: Run document upload validation tests
         run: php tests/php/document_upload_validation.php
@@ -147,6 +149,17 @@ jobs:
 
       - name: Run evaluator scoring read endpoint HTTP guard tests
         run: php tests/php/evaluator_scoring_read_endpoints_security.php
+
+      - name: Run assessment workflow integration tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: equipath_eteeap
+        run: php tests/php/assessment_workflow_integration.php
+
+      - name: Run assessment endpoint HTTP guard tests
+        run: php tests/php/assessment_endpoint_security.php
 
       - name: Run notification integration tests
         env:
