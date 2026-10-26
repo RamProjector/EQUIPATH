@@ -55,7 +55,9 @@ try {
     stream_set_blocking($pipes[1], false);
     stream_set_blocking($pipes[2], false);
 
-    $url = 'http://127.0.0.1:' . $port . '/api/assign-evaluator.php';
+    $base = 'http://127.0.0.1:' . $port . '/api/';
+    $url = $base . 'assign-evaluator.php';
+    $optionsUrl = $base . 'evaluator-assignment-options.php';
     $ready = false;
     for ($attempt = 0; $attempt < 40; $attempt++) {
         [$status] = requestAssignmentEndpoint($url, 'GET');
@@ -76,6 +78,15 @@ try {
     }
 
     $body = '{"application_id":1,"evaluator_user_id":1}';
+    [$optionsMethodStatus, $optionsMethodBody] = requestAssignmentEndpoint($optionsUrl, 'POST');
+    if ($optionsMethodStatus !== 405 || (json_decode($optionsMethodBody, true)['error'] ?? null) !== 'method_not_allowed') {
+        throw new RuntimeException('Evaluator assignment options endpoint did not reject POST with HTTP 405.');
+    }
+    [$optionsAuthStatus, $optionsAuthBody] = requestAssignmentEndpoint($optionsUrl, 'GET');
+    if ($optionsAuthStatus !== 401 || (json_decode($optionsAuthBody, true)['error'] ?? null) !== 'authentication_required') {
+        throw new RuntimeException('Evaluator assignment options endpoint was not protected by authentication.');
+    }
+
     [$csrfStatus, $csrfBody] = requestAssignmentEndpoint($url, 'POST', $body, [
         'Content-Type: application/json',
         'Content-Length: ' . strlen($body),
