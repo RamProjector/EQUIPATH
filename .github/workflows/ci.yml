@@ -53,6 +53,9 @@ jobs:
       - name: Run document upload validation tests
         run: php tests/php/document_upload_validation.php
 
+      - name: Run upload endpoint HTTP guard tests
+        run: php tests/php/upload_endpoint_security.php
+
       - name: Check database schema safety contract
         run: php tests/php/schema_contract.php
 
