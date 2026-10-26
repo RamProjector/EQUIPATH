@@ -202,8 +202,8 @@ try {
     $auditCheck->execute();
     $auditCount = (int) $auditCheck->get_result()->fetch_assoc()['total'];
     $auditCheck->close();
-    if ($auditCount !== 2) {
-        throw new RuntimeException('Expected exactly two successful document download audit events.');
+    if ($auditCount !== 3) {
+        throw new RuntimeException('Expected exactly three successful document download audit events (owner, evaluator, coordinator).');
     }
 
     fwrite(STDOUT, "PASS: document download integration (owner access, assigned evaluator access, coordinator screening-queue access, cross-applicant denial, no implicit administrator access, integrity verification, audit logging).\n");
