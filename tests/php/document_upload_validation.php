@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/web/src/Documents/PortfolioDocumentService.php';
 
 $service = new PortfolioDocumentService();
+$db = mysqli_init();
 $dummyFile = [
     'name' => 'portfolio.pdf',
     'type' => 'application/pdf',
@@ -35,7 +36,7 @@ try {
         $file = $dummyFile;
         $file['name'] = $badName;
         expectUploadRejected(
-            fn() => $service->upload(new mysqli(), 1, 1, 'portfolio', $file),
+            fn() => $service->upload($db, 1, 1, 'portfolio', $file),
             'Unsafe filename was accepted: ' . json_encode($badName)
         );
     }
