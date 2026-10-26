@@ -88,6 +88,9 @@
     loginButton.disabled = value;
     logoutButton.disabled = value;
     refreshButton.disabled = value;
+    refreshEvaluationsButton.disabled = value;
+    saveEvaluationButton.disabled = value;
+    submitEvaluationButton.disabled = value;
     loginButton.textContent = value && loginForm.checkValidity() ? "Please wait…" : "Sign in";
   }
 
