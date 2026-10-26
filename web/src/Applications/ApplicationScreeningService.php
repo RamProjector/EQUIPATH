@@ -36,6 +36,10 @@ final class ApplicationScreeningService
             throw new InvalidArgumentException('Applicant-facing screening feedback must be at most 900 bytes and contain no NUL bytes.');
         }
 
+        if (in_array($outcome, ['ineligible', 'needs_correction'], true) && trim($notes) === '') {
+            throw new InvalidArgumentException('A reason is required for ineligibility or correction outcomes.');
+        }
+
         $targetStatus = self::OUTCOME_STATUS[$outcome];
         $db->begin_transaction();
 
