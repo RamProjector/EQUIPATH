@@ -141,46 +141,58 @@ try {
         throw new RuntimeException('Screening did not persist the application status.');
     }
 
-    $checks = [
-        'review' => [
-            'SELECT COUNT(*) AS total FROM screening_reviews
-             WHERE application_id = ? AND reviewer_user_id = ? AND outcome = ? AND notes = ?',
-            'iiss',
-            [$applicationIds['submitted'], $userIds['coordinator'], 'needs_correction', 'Please provide the missing employment certificate.'],
-        ],
-        'history' => [
-            "SELECT COUNT(*) AS total FROM application_status_history
-             WHERE application_id = ? AND changed_by = ? AND from_status = 'submitted'
-               AND to_status = 'needs_correction'",
-            'ii',
-            [$applicationIds['submitted'], $userIds['coordinator']],
-        ],
-        'audit' => [
-            "SELECT COUNT(*) AS total FROM audit_logs
-             WHERE actor_user_id = ? AND action_key = 'application.screened'
-               AND entity_type = 'application' AND entity_id = ? AND outcome = 'success'",
-            'ii',
-            [$userIds['coordinator'], $applicationIds['submitted']],
-        ],
-        'notification' => [
-            "SELECT COUNT(*) AS total FROM notifications
-             WHERE recipient_user_id = ? AND related_application_id = ?
-               AND notification_type = 'application_screening'
-               AND message LIKE '%missing employment certificate%'",
-            'ii',
-            [$userIds['applicant'], $applicationIds['submitted']],
-        ],
-    ];
+    $review = $db->prepare(
+        'SELECT COUNT(*) AS total FROM screening_reviews
+         WHERE application_id = ? AND reviewer_user_id = ? AND outcome = ? AND notes = ?'
+    );
+    $reviewOutcome = 'needs_correction';
+    $reviewNotes = 'Please provide the missing employment certificate.';
+    $review->bind_param('iiss', $applicationIds['submitted'], $userIds['coordinator'], $reviewOutcome, $reviewNotes);
+    $review->execute();
+    $reviewCount = (int) $review->get_result()->fetch_assoc()['total'];
+    $review->close();
+    if ($reviewCount !== 1) {
+        throw new RuntimeException('Screening did not create the expected review record.');
+    }
 
-    foreach ($checks as $label => [$sql, $types, $values]) {
-        $statement = $db->prepare($sql);
-        $statement->bind_param($types, ...$values);
-        $statement->execute();
-        $count = (int) $statement->get_result()->fetch_assoc()['total'];
-        $statement->close();
-        if ($count !== 1) {
-            throw new RuntimeException('Screening did not create the expected ' . $label . ' record.');
-        }
+    $history = $db->prepare(
+        "SELECT COUNT(*) AS total FROM application_status_history
+         WHERE application_id = ? AND changed_by = ? AND from_status = 'submitted'
+           AND to_status = 'needs_correction'"
+    );
+    $history->bind_param('ii', $applicationIds['submitted'], $userIds['coordinator']);
+    $history->execute();
+    $historyCount = (int) $history->get_result()->fetch_assoc()['total'];
+    $history->close();
+    if ($historyCount !== 1) {
+        throw new RuntimeException('Screening did not create the expected status history record.');
+    }
+
+    $audit = $db->prepare(
+        "SELECT COUNT(*) AS total FROM audit_logs
+         WHERE actor_user_id = ? AND action_key = 'application.screened'
+           AND entity_type = 'application' AND entity_id = ? AND outcome = 'success'"
+    );
+    $audit->bind_param('ii', $userIds['coordinator'], $applicationIds['submitted']);
+    $audit->execute();
+    $auditCount = (int) $audit->get_result()->fetch_assoc()['total'];
+    $audit->close();
+    if ($auditCount !== 1) {
+        throw new RuntimeException('Screening did not create the expected audit record.');
+    }
+
+    $notification = $db->prepare(
+        "SELECT COUNT(*) AS total FROM notifications
+         WHERE recipient_user_id = ? AND related_application_id = ?
+           AND notification_type = 'application_screening'
+           AND message LIKE '%missing employment certificate%'"
+    );
+    $notification->bind_param('ii', $userIds['applicant'], $applicationIds['submitted']);
+    $notification->execute();
+    $notificationCount = (int) $notification->get_result()->fetch_assoc()['total'];
+    $notification->close();
+    if ($notificationCount !== 1) {
+        throw new RuntimeException('Screening did not create the expected applicant notification.');
     }
 
     try {
