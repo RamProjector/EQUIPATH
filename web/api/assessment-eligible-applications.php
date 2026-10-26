@@ -30,7 +30,7 @@ try {
                 a.updated_at, p.program_code, p.program_name
          FROM applications a
          INNER JOIN academic_programs p ON p.program_id = a.program_id
-         WHERE a.application_status IN ('eligible', 'assessment_scheduled')
+         WHERE a.application_status = 'assessment_scheduled'
             OR (
                 a.application_status = 'under_evaluation'
                 AND EXISTS (

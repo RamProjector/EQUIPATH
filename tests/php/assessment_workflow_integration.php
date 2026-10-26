@@ -43,6 +43,7 @@ try {
     $db->set_charset('utf8mb4');
     $suffix = bin2hex(random_bytes(8));
     $coordinatorRoleId = assessmentEnsureRole($db, 'coordinator', 'Coordinator', $createdRoleIds);
+    $evaluatorRoleId = assessmentEnsureRole($db, 'evaluator', 'Evaluator', $createdRoleIds);
     $applicantRoleId = assessmentEnsureRole($db, 'applicant', 'Applicant', $createdRoleIds);
 
     $passwordHash = password_hash('assessment-test-password', PASSWORD_DEFAULT);
@@ -50,7 +51,7 @@ try {
         "INSERT INTO users (email, password_hash, given_name, family_name, account_status)
          VALUES (?, ?, ?, ?, 'active')"
     );
-    foreach (['applicant', 'coordinator'] as $kind) {
+    foreach (['applicant', 'coordinator', 'evaluator'] as $kind) {
         $email = $kind . '-assessment-' . $suffix . '@example.invalid';
         $givenName = ucfirst($kind);
         $familyName = 'AssessmentTest';
@@ -60,7 +61,7 @@ try {
     }
     $insertUser->close();
 
-    foreach ([[$userIds['applicant'], $applicantRoleId], [$userIds['coordinator'], $coordinatorRoleId]] as [$userId, $roleId]) {
+    foreach ([[$userIds['applicant'], $applicantRoleId], [$userIds['coordinator'], $coordinatorRoleId], [$userIds['evaluator'], $evaluatorRoleId]] as [$userId, $roleId]) {
         $assignRole = $db->prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)');
         $assignRole->bind_param('ii', $userId, $roleId);
         $assignRole->execute();
@@ -88,7 +89,7 @@ try {
     $period->close();
 
     $applicationNumber = 'ASSESS-' . strtoupper(substr($suffix, 0, 8));
-    $status = 'eligible';
+    $status = 'under_evaluation';
     $submittedAt = date('Y-m-d H:i:s');
     $application = $db->prepare(
         'INSERT INTO applications
@@ -99,6 +100,18 @@ try {
     $application->execute();
     $applicationId = (int) $db->insert_id;
     $application->close();
+
+    $assignmentStatus = 'submitted';
+    $assignmentSubmittedAt = date('Y-m-d H:i:s');
+    $assignment = $db->prepare(
+        'INSERT INTO evaluator_assignments
+            (application_id, evaluator_user_id, assigned_by, assignment_status, submitted_at)
+         VALUES (?, ?, ?, ?, ?)'
+    );
+    $assignment->bind_param('iiiss', $applicationId, $userIds['evaluator'], $userIds['coordinator'], $assignmentStatus, $assignmentSubmittedAt);
+    $assignment->execute();
+    $assignmentId = (int) $db->insert_id;
+    $assignment->close();
 
     $clock = $db->query(
         "SELECT DATE_FORMAT(DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 2 DAY), '%Y-%m-%d %H:%i:%s') AS start_time,
@@ -283,6 +296,11 @@ try {
             $delete->close();
         }
         if ($applicationId !== null) {
+            $delete = $db->prepare('DELETE FROM evaluator_assignments WHERE application_id = ?');
+            $delete->bind_param('i', $applicationId);
+            $delete->execute();
+            $delete->close();
+
             $delete = $db->prepare('DELETE FROM notifications WHERE related_application_id = ?');
             $delete->bind_param('i', $applicationId);
             $delete->execute();

@@ -55,7 +55,7 @@ jobs:
           node --check web/assets/js/app.js
           node --check web/assets/js/assessments.js
           node --check web/assets/js/credit-recommendations.js
-          node --check web/assets/js/credit-recommendations.js
+          node --check web/assets/js/accreditation.js
 
       - name: Run document upload validation tests
         run: php tests/php/document_upload_validation.php
@@ -174,16 +174,16 @@ jobs:
       - name: Run credit recommendation endpoint HTTP guard tests
         run: php tests/php/credit_recommendation_endpoint_security.php
 
-      - name: Run credit recommendation integration tests
+      - name: Run accreditation decision integration tests
         env:
           DB_HOST: 127.0.0.1
           DB_USER: root
           DB_PASSWORD: root
           DB_NAME: equipath_eteeap
-        run: php tests/php/credit_recommendation_integration.php
+        run: php tests/php/accreditation_decision_integration.php
 
-      - name: Run credit recommendation endpoint HTTP guard tests
-        run: php tests/php/credit_recommendation_endpoint_security.php
+      - name: Run accreditation endpoint HTTP guard tests
+        run: php tests/php/accreditation_endpoint_security.php
 
       - name: Run notification integration tests
         env:

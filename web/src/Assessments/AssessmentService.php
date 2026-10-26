@@ -78,8 +78,8 @@ final class AssessmentService
                 if ($totalAssignments < 1 || $submittedAssignments !== $totalAssignments) {
                     throw new DomainException('All assigned evaluations must be submitted before scheduling an assessment.');
                 }
-            } elseif (!in_array($applicationStatus, ['eligible', 'assessment_scheduled'], true)) {
-                throw new DomainException('The application is not in a schedulable state.');
+            } elseif ($applicationStatus !== 'assessment_scheduled') {
+                throw new DomainException('Assessment scheduling requires submitted evaluator assessments or an existing assessment schedule.');
             }
 
             $eventStatus = 'scheduled';

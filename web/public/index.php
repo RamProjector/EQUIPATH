@@ -13,6 +13,7 @@ declare(strict_types=1);
   <script src="../assets/js/app.js" defer></script>
   <script src="../assets/js/assessments.js" defer></script>
   <script src="../assets/js/credit-recommendations.js" defer></script>
+  <script src="../assets/js/accreditation.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -137,7 +138,7 @@ declare(strict_types=1);
 
         <div id="assessment-manager" class="evaluation-editor" hidden>
           <h4>Schedule an assessment</h4>
-          <p class="section-intro">Only eligible applications, or applications whose assigned evaluations are all submitted, can be scheduled.</p>
+          <p class="section-intro">Assessment scheduling requires every active evaluator assignment to be submitted. Additional events may be scheduled after the first event is created.</p>
           <form id="assessment-form" class="assessment-form">
             <label for="assessment-application">Application</label>
             <select id="assessment-application" required>
@@ -181,6 +182,48 @@ declare(strict_types=1);
             <label for="assessment-feedback">Feedback (optional)</label>
             <textarea id="assessment-feedback" rows="3" maxlength="4000"></textarea>
             <button id="save-assessment-result" class="button primary" type="submit">Record result</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="accreditation-workspace" class="inbox" aria-labelledby="accreditation-title" hidden>
+        <div class="inbox-heading">
+          <div>
+            <h3 id="accreditation-title">Accreditation decisions</h3>
+            <p class="section-intro">Authorized approvers record official decisions separately from evaluator recommendations.</p>
+          </div>
+          <button id="refresh-accreditation" class="button secondary compact" type="button">Refresh</button>
+        </div>
+        <p id="accreditation-status" class="status-message" role="status" aria-live="polite"></p>
+        <label for="accreditation-application">Application awaiting decision or eligible for an explicit revision</label>
+        <select id="accreditation-application">
+          <option value="">Choose an application</option>
+        </select>
+        <div id="accreditation-editor" class="evaluation-editor" hidden>
+          <h4 id="accreditation-editor-title">Decision details</h4>
+          <p id="accreditation-editor-subtitle" class="section-intro"></p>
+          <h5>Credit recommendations for review</h5>
+          <ul id="accreditation-recommendation-list" class="notification-list" aria-label="Evaluator credit recommendations"></ul>
+          <h5>Decision history</h5>
+          <ul id="accreditation-history-list" class="notification-list" aria-label="Accreditation decision history"></ul>
+          <form id="accreditation-decision-form" class="assessment-form" hidden>
+            <label for="accreditation-decision">Decision</label>
+            <select id="accreditation-decision" required>
+              <option value="approved">Approve</option>
+              <option value="rejected">Reject</option>
+              <option value="deferred">Defer for further review</option>
+              <option value="returned_for_revision">Return for revision</option>
+            </select>
+            <div id="supersede-decision-container" hidden>
+              <label class="checkbox-label" for="supersede-decision">
+                <input id="supersede-decision" type="checkbox">
+                I confirm this is an explicit superseding decision replacing the current decision.
+              </label>
+            </div>
+            <div id="approved-credit-options" class="criteria-list" hidden></div>
+            <label for="accreditation-rationale">Decision rationale</label>
+            <textarea id="accreditation-rationale" rows="4" maxlength="4000" required></textarea>
+            <button id="submit-accreditation-decision" class="button primary" type="submit">Record decision</button>
           </form>
         </div>
       </section>
