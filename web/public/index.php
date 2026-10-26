@@ -15,6 +15,7 @@ declare(strict_types=1);
   <script src="../assets/js/evaluator-assignments.js" defer></script>
   <script src="../assets/js/rubric-configuration.js" defer></script>
   <script src="../assets/js/reports.js" defer></script>
+  <script src="../assets/js/registrar-integration.js" defer></script>
   <script src="../assets/js/applicant-applications.js" defer></script>
   <script src="../assets/js/assessments.js" defer></script>
   <script src="../assets/js/credit-recommendations.js" defer></script>
@@ -178,6 +179,58 @@ declare(strict_types=1);
         <p id="reports-status" class="status-message" role="status" aria-live="polite"></p>
         <div id="reports-summary" class="report-summary" aria-label="Report summary"></div>
         <div id="reports-sections" class="report-sections"></div>
+      </section>
+
+      <section id="registrar-workspace" class="inbox" aria-labelledby="registrar-title" hidden>
+        <div class="inbox-heading">
+          <div>
+            <h3 id="registrar-title">Registrar integration</h3>
+            <p class="section-intro">Preview external registrar credit records, reconcile exact matches to current approved credits, and record mapping conflicts. Imports never change academic decisions or credit totals.</p>
+          </div>
+          <button id="refresh-registrar-history" class="button secondary compact" type="button">Refresh history</button>
+        </div>
+        <p id="registrar-status" class="status-message" role="status" aria-live="polite"></p>
+        <div class="evaluation-editor">
+          <h4>Import and reconcile CSV</h4>
+          <p class="field-hint">Required columns in this exact order: external_record_id, application_number, course_code, course_title, approved_credits. Maximum 2 MiB and 1000 data rows. Preview is read-only; commit only creates external-record mappings.</p>
+          <form id="registrar-import-form" class="assessment-form" enctype="multipart/form-data">
+            <label for="registrar-source-system">External source system identifier</label>
+            <input id="registrar-source-system" type="text" maxlength="100" value="ADFC_REGISTRAR" required>
+            <label for="registrar-csv-file">Registrar CSV file</label>
+            <input id="registrar-csv-file" type="file" accept=".csv,text/csv" required>
+            <button id="preview-registrar-import" class="button primary" type="submit">Preview reconciliation</button>
+          </form>
+          <div id="registrar-preview-panel" hidden>
+            <h5>Preview results</h5>
+            <p id="registrar-preview-summary" class="field-hint"></p>
+            <div class="report-section">
+              <table id="registrar-preview-table" class="report-table">
+                <thead><tr><th>Row</th><th>External record</th><th>Application</th><th>Course</th><th>Credits</th><th>Status</th><th>Reason</th></tr></thead>
+                <tbody id="registrar-preview-body"></tbody>
+              </table>
+            </div>
+            <button id="commit-registrar-import" class="button primary" type="button" hidden>Commit mappings</button>
+          </div>
+        </div>
+        <div class="evaluation-editor">
+          <div class="inbox-heading">
+            <div>
+              <h4>Export current approved credits</h4>
+              <p class="field-hint">Exports only non-superseded approved credits, without applicant names or emails.</p>
+            </div>
+            <a id="export-registrar-credits" class="button secondary compact" href="../api/export-registrar-credits.php" target="_blank" rel="noopener">Export CSV</a>
+          </div>
+          <div class="assessment-form">
+            <label for="registrar-export-from">From decision date</label>
+            <input id="registrar-export-from" type="date" required>
+            <label for="registrar-export-to">To decision date</label>
+            <input id="registrar-export-to" type="date" required>
+          </div>
+        </div>
+        <div class="evaluation-editor">
+          <h4>Recent integration batches</h4>
+          <ul id="registrar-batch-history" class="notification-list" aria-label="Recent registrar integration batches"></ul>
+        </div>
       </section>
 
       <section id="applicant-workspace" class="inbox" aria-labelledby="applicant-title" hidden>
