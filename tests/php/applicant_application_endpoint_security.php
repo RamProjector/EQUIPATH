@@ -61,6 +61,7 @@ try {
     $createUrl = $base . 'create-application.php';
     $submitUrl = $base . 'submit-application.php';
     $documentsUrl = $base . 'application-documents.php?application_id=1';
+    $historyUrl = $base . 'application-history.php';
     $uploadUrl = $base . 'upload-document.php';
     $ready = false;
     for ($attempt = 0; $attempt < 40; $attempt++) {
@@ -75,7 +76,7 @@ try {
         throw new RuntimeException('HTTP server did not become ready for applicant endpoint tests.');
     }
 
-    foreach ([$createUrl => 'application creation', $submitUrl => 'application submission', $uploadUrl => 'document upload'] as $url => $label) {
+    foreach ([$createUrl => 'application creation', $submitUrl => 'application submission', $uploadUrl => 'document upload', $historyUrl => 'application history'] as $url => $label) {
         [$status, $body] = requestApplicantEndpoint($url, 'GET');
         $json = json_decode($body, true);
         if ($status !== 405 || ($json['error'] ?? null) !== 'method_not_allowed') {
@@ -100,6 +101,15 @@ try {
     if ($applicationsStatus !== 401 || ($applicationsJson['error'] ?? null) !== 'authentication_required') {
         throw new RuntimeException('Application list was not protected by authentication.');
     }
+    [$historyMethodStatus, $historyMethodBody] = requestApplicantEndpoint($historyUrl, 'POST');
+    if ($historyMethodStatus !== 405 || (json_decode($historyMethodBody, true)['error'] ?? null) !== 'method_not_allowed') {
+        throw new RuntimeException('Application history endpoint did not reject POST with HTTP 405.');
+    }
+    [$historyValidationStatus, $historyValidationBody] = requestApplicantEndpoint($historyUrl, 'GET');
+    if ($historyValidationStatus !== 422 || (json_decode($historyValidationBody, true)['error'] ?? null) !== 'invalid_application_details') {
+        throw new RuntimeException('Application history endpoint did not validate application ID before accessing data.');
+    }
+
     [$documentsStatus, $documentsBody] = requestApplicantEndpoint($base . 'application-documents.php', 'GET');
     $documentsJson = json_decode($documentsBody, true);
     if ($documentsStatus !== 422 || ($documentsJson['error'] ?? null) !== 'invalid_application_details') {
