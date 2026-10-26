@@ -13,6 +13,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $db = null;
 $createdRoleIds = [];
 $userIds = [];
+$batchIds = [];
 $sessionDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'equipath-registrar-auth-' . bin2hex(random_bytes(8));
 $server = null;
 $port = random_int(20000, 45000);
@@ -109,19 +110,32 @@ try {
     $insertUser->close();
 
     $token = bin2hex(random_bytes(32));
+    $retryToken = bin2hex(random_bytes(32));
     $csrfA = bin2hex(random_bytes(32));
     $csrfB = bin2hex(random_bytes(32));
+    $csrfRetry = bin2hex(random_bytes(32));
     $csrfUnauthorized = bin2hex(random_bytes(32));
     $sessionA = bin2hex(random_bytes(16));
     $sessionB = bin2hex(random_bytes(16));
+    $sessionRetry = bin2hex(random_bytes(16));
     $sessionUnauthorized = bin2hex(random_bytes(16));
     $pending = [
         'token_hash' => hash('sha256', $token),
         'registrar_user_id' => $userIds['registrar'],
         'source_system' => 'TEST_COLLEGE',
-        'rows' => [],
+        'rows' => [[
+            'external_record_id' => 'EXT-' . $suffix,
+            'application_number' => 'NO-APPLICATION-' . $suffix,
+            'course_code' => 'TEST101',
+            'course_title' => 'Nonexistent test course',
+            'approved_credits' => '3.00',
+        ]],
         'created_at' => time(),
     ];
+    $pendingRetry = array_merge($pending, [
+        'token_hash' => hash('sha256', $retryToken),
+        'rows' => [],
+    ]);
 
     registrarAuthSeedSession($sessionDir, $sessionA, [
         'user_id' => $userIds['registrar'],
@@ -131,6 +145,11 @@ try {
     registrarAuthSeedSession($sessionDir, $sessionB, [
         'user_id' => $userIds['registrar'],
         '_csrf_token' => $csrfB,
+    ]);
+    registrarAuthSeedSession($sessionDir, $sessionRetry, [
+        'user_id' => $userIds['registrar'],
+        '_csrf_token' => $csrfRetry,
+        'registrar_import_preview' => $pendingRetry,
     ]);
     registrarAuthSeedSession($sessionDir, $sessionUnauthorized, [
         'user_id' => $userIds['applicant'],
@@ -162,13 +181,13 @@ try {
     // An intentionally invalid stored row set forces a controlled 422 after
     // token validation. The token must remain available so a corrected/retried
     // request is not treated as a consumed preview.
-    [$failedCommitStatus, $failedCommitBody] = registrarAuthRequest($url, $sessionA, $csrfA, $token);
+    [$failedCommitStatus, $failedCommitBody] = registrarAuthRequest($url, $sessionRetry, $csrfRetry, $retryToken);
     $failedCommitJson = json_decode($failedCommitBody, true);
     registrarAuthAssert(
         $failedCommitStatus === 422 && ($failedCommitJson['error'] ?? null) === 'invalid_import_rows',
         'The deliberately invalid preview did not fail with the expected validation response.'
     );
-    [$retryStatus, $retryBody] = registrarAuthRequest($url, $sessionA, $csrfA, $token);
+    [$retryStatus, $retryBody] = registrarAuthRequest($url, $sessionRetry, $csrfRetry, $retryToken);
     $retryJson = json_decode($retryBody, true);
     registrarAuthAssert(
         $retryStatus === 422 && ($retryJson['error'] ?? null) === 'invalid_import_rows',
@@ -182,6 +201,27 @@ try {
         'A registrar session without the preview state accepted a token from another session.'
     );
 
+    // A well-formed row with no matching local credit creates a rejected
+    // import batch without a mapping, but still completes the endpoint flow.
+    // The endpoint must consume that preview on success and reject its replay.
+    [$successStatus, $successBody] = registrarAuthRequest($url, $sessionA, $csrfA, $token);
+    $successJson = json_decode($successBody, true);
+    if (is_array($successJson) && isset($successJson['batch']['batch_id'])) {
+        $batchIds[] = (int) $successJson['batch']['batch_id'];
+    }
+    registrarAuthAssert(
+        $successStatus === 201 && ($successJson['ok'] ?? false) === true &&
+        (int) ($successJson['batch']['rejected_rows'] ?? 0) === 1,
+        'The valid registrar request did not complete with the expected rejected-row result.'
+    );
+
+    [$replayStatus, $replayBody] = registrarAuthRequest($url, $sessionA, $csrfA, $token);
+    $replayJson = json_decode($replayBody, true);
+    registrarAuthAssert(
+        $replayStatus === 409 && ($replayJson['error'] ?? null) === 'preview_missing_expired_or_invalid',
+        'A preview token was accepted again after a successful commit.'
+    );
+
     [$unauthorizedStatus, $unauthorizedBody] = registrarAuthRequest($url, $sessionUnauthorized, $csrfUnauthorized, $token);
     $unauthorizedJson = json_decode($unauthorizedBody, true);
     registrarAuthAssert(
@@ -189,7 +229,7 @@ try {
         'A non-registrar account was not denied before import processing.'
     );
 
-    fwrite(STDOUT, "PASS: authenticated registrar endpoint checks (failed-commit retry, cross-session token rejection, and non-registrar denial).\n");
+    fwrite(STDOUT, "PASS: authenticated registrar endpoint checks (failed-commit retry, cross-session rejection, non-registrar denial, and replay rejection after success).\n");
 } catch (Throwable $error) {
     fwrite(STDERR, 'FAIL: authenticated registrar endpoint checks — ' . $error->getMessage() . "\n");
     exit(1);
@@ -204,6 +244,27 @@ try {
     @rmdir($sessionDir);
 
     if ($db instanceof mysqli) {
+        foreach ($batchIds as $batchId) {
+            $delete = $db->prepare(
+                "DELETE FROM audit_logs
+                 WHERE actor_user_id = ? AND entity_type = 'integration_batch' AND entity_id = ?"
+            );
+            $actorUserId = $userIds['registrar'] ?? 0;
+            $delete->bind_param('ii', $actorUserId, $batchId);
+            $delete->execute();
+            $delete->close();
+
+            $delete = $db->prepare('DELETE FROM external_record_mappings WHERE integration_batch_id = ?');
+            $delete->bind_param('i', $batchId);
+            $delete->execute();
+            $delete->close();
+
+            $delete = $db->prepare('DELETE FROM integration_batches WHERE integration_batch_id = ?');
+            $delete->bind_param('i', $batchId);
+            $delete->execute();
+            $delete->close();
+        }
+
         foreach ($userIds as $userId) {
             $delete = $db->prepare('DELETE FROM user_roles WHERE user_id = ?');
             $delete->bind_param('i', $userId);
