@@ -98,17 +98,15 @@ final class RubricConfigurationService
 
             $unfinished = $db->prepare(
                 "SELECT COUNT(*) AS total
-                 FROM evaluator_assignments ea
-                 INNER JOIN applications a ON a.application_id = ea.application_id
-                 WHERE a.program_id = ?
-                   AND ea.assignment_status IN ('assigned', 'in_progress')"
+                 FROM applications a
+                 WHERE a.program_id = ? AND a.application_status = 'under_evaluation'"
             );
             $unfinished->bind_param('i', $programId);
             $unfinished->execute();
             $unfinishedCount = (int) ($unfinished->get_result()->fetch_assoc()['total'] ?? 0);
             $unfinished->close();
             if ($unfinishedCount > 0) {
-                throw new DomainException('An active rubric cannot be replaced while evaluators have unfinished assignments for the program.');
+                throw new DomainException('An active rubric cannot be replaced while any application for the program is under evaluation.');
             }
 
             $versionQuery = $db->prepare(
