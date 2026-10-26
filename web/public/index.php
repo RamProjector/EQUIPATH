@@ -11,6 +11,7 @@ declare(strict_types=1);
   <title>EquiPath | ADFC ETEEAP</title>
   <link rel="stylesheet" href="../assets/css/app.css">
   <script src="../assets/js/app.js" defer></script>
+  <script src="../assets/js/assessments.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
