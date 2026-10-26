@@ -128,6 +128,9 @@ jobs:
           DB_NAME: equipath_eteeap
         run: php tests/php/notification_integration.php
 
+      - name: Run notification endpoint HTTP guard tests
+        run: php tests/php/notification_endpoint_security.php
+
       - name: Run session security tests
         run: php tests/php/session_security.php
 
