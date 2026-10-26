@@ -44,7 +44,7 @@ try {
 
     $suffix = bin2hex(random_bytes(8));
     $roleIds = [];
-    foreach (['applicant' => 'Applicant', 'evaluator' => 'Evaluator', 'administrator' => 'Administrator'] as $key => $label) {
+    foreach (['applicant' => 'Applicant', 'evaluator' => 'Evaluator', 'coordinator' => 'Coordinator', 'administrator' => 'Administrator'] as $key => $label) {
         $find = $db->prepare('SELECT role_id FROM roles WHERE role_key = ? LIMIT 1');
         $find->bind_param('s', $key);
         $find->execute();
@@ -67,7 +67,7 @@ try {
          VALUES (?, ?, ?, ?, 'active')"
     );
     $passwordHash = password_hash('unused-test-password', PASSWORD_DEFAULT);
-    foreach (['owner', 'other', 'evaluator', 'administrator'] as $kind) {
+    foreach (['owner', 'other', 'evaluator', 'coordinator', 'administrator'] as $kind) {
         $email = $kind . '-' . $suffix . '@example.invalid';
         $givenName = ucfirst($kind);
         $familyName = 'DocumentDownloadTest';
@@ -77,7 +77,7 @@ try {
     }
     $insertUser->close();
 
-    foreach (['owner' => 'applicant', 'other' => 'applicant', 'evaluator' => 'evaluator', 'administrator' => 'administrator'] as $kind => $roleKey) {
+    foreach (['owner' => 'applicant', 'other' => 'applicant', 'evaluator' => 'evaluator', 'coordinator' => 'coordinator', 'administrator' => 'administrator'] as $kind => $roleKey) {
         $addRole = $db->prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)');
         $addRole->bind_param('ii', $userIds[$kind], $roleIds[$roleKey]);
         $addRole->execute();
@@ -106,8 +106,9 @@ try {
 
     $applicationNumber = 'DL-' . strtoupper(substr($suffix, 0, 12));
     $application = $db->prepare(
-        'INSERT INTO applications (application_number, applicant_user_id, program_id, period_id)
-         VALUES (?, ?, ?, ?)'
+        'INSERT INTO applications
+            (application_number, applicant_user_id, program_id, period_id, application_status, submitted_at)
+         VALUES (?, ?, ?, ?, 'submitted', CURRENT_TIMESTAMP)'
     );
     $application->bind_param('siii', $applicationNumber, $userIds['owner'], $programId, $periodId);
     $application->execute();
@@ -182,6 +183,11 @@ try {
         throw new RuntimeException('Another applicant was not denied document download.');
     }
 
+    $coordinatorBody = runDownloadEndpoint($userIds['coordinator'], $documentId);
+    if (http_response_code() !== 200 || $coordinatorBody !== $pdfBytes) {
+        throw new RuntimeException('Coordinator could not retrieve evidence for an application in the screening queue.');
+    }
+
     $administratorBody = runDownloadEndpoint($userIds['administrator'], $documentId);
     if (http_response_code() !== 403 || json_decode($administratorBody, true)['error'] !== 'access_denied') {
         throw new RuntimeException('Administrator received implicit document access.');
@@ -200,7 +206,7 @@ try {
         throw new RuntimeException('Expected exactly two successful document download audit events.');
     }
 
-    fwrite(STDOUT, "PASS: document download integration (owner access, assigned evaluator access, cross-applicant denial, no implicit administrator access, integrity verification, audit logging).\n");
+    fwrite(STDOUT, "PASS: document download integration (owner access, assigned evaluator access, coordinator screening-queue access, cross-applicant denial, no implicit administrator access, integrity verification, audit logging).\n");
 } catch (Throwable $error) {
     fwrite(STDERR, 'FAIL: document download integration — ' . $error->getMessage() . "\n");
     exit(1);
