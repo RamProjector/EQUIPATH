@@ -66,7 +66,8 @@ final class AssessmentService
                     "SELECT COUNT(*) AS total,
                             SUM(CASE WHEN assignment_status = 'submitted' THEN 1 ELSE 0 END) AS submitted
                      FROM evaluator_assignments
-                     WHERE application_id = ?"
+                     WHERE application_id = ?
+                       AND assignment_status IN ('assigned', 'in_progress', 'submitted')"
                 );
                 $assignmentsQuery->bind_param('i', $applicationId);
                 $assignmentsQuery->execute();
