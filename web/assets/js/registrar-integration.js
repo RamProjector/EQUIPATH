@@ -237,6 +237,17 @@
     exportLink.href = "../api/export-registrar-credits.php" + (query ? "?" + query : "");
   }
 
+  function invalidatePreview() {
+    if (!previewToken) return;
+    previewToken = null;
+    commitButton.hidden = true;
+    commitButton.disabled = true;
+    previewPanel.hidden = true;
+    setStatus("The CSV or source system changed. Preview it again before committing.", "error");
+  }
+
+  byId("registrar-csv-file").addEventListener("change", invalidatePreview);
+  byId("registrar-source-system").addEventListener("input", invalidatePreview);
   importForm.addEventListener("submit", previewImport);
   commitButton.addEventListener("click", commitImport);
   byId("refresh-registrar-history").addEventListener("click", loadHistory);
