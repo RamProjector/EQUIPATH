@@ -123,6 +123,20 @@
         body: form
       });
       const data = await readJson(response);
+      // Inputs can change while the request is in flight. Never bind a token
+      // to a form that no longer matches the file and source actually previewed.
+      if (byId("registrar-csv-file").files?.[0] !== file ||
+          byId("registrar-source-system").value.trim() !== sourceSystem) {
+        previewToken = null;
+        commitButton.hidden = true;
+        commitButton.disabled = true;
+        previewPanel.hidden = true;
+        setStatus("The CSV or source system changed while previewing. Preview the current inputs again.", "error");
+        return;
+      }
+      if (typeof data.preview_token !== "string" || !/^[a-f0-9]{64}$/.test(data.preview_token)) {
+        throw new Error("The server did not return a valid preview token. Preview the CSV again.");
+      }
       previewToken = data.preview_token;
       renderPreview(Array.isArray(data.rows) ? data.rows : []);
       const counts = data.counts || {};
