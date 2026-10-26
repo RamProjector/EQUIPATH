@@ -119,7 +119,7 @@ try {
         'token_hash' => hash('sha256', $token),
         'registrar_user_id' => $userIds['registrar'],
         'source_system' => 'TEST_COLLEGE',
-        'rows' => [['external_record_id' => 'TEST-ONLY']],
+        'rows' => [],
         'created_at' => time(),
     ];
 
@@ -159,6 +159,22 @@ try {
     }
     registrarAuthAssert($ready, 'Registrar commit endpoint did not become ready.');
 
+    // An intentionally invalid stored row set forces a controlled 422 after
+    // token validation. The token must remain available so a corrected/retried
+    // request is not treated as a consumed preview.
+    [$failedCommitStatus, $failedCommitBody] = registrarAuthRequest($url, $sessionA, $csrfA, $token);
+    $failedCommitJson = json_decode($failedCommitBody, true);
+    registrarAuthAssert(
+        $failedCommitStatus === 422 && ($failedCommitJson['error'] ?? null) === 'invalid_import_rows',
+        'The deliberately invalid preview did not fail with the expected validation response.'
+    );
+    [$retryStatus, $retryBody] = registrarAuthRequest($url, $sessionA, $csrfA, $token);
+    $retryJson = json_decode($retryBody, true);
+    registrarAuthAssert(
+        $retryStatus === 422 && ($retryJson['error'] ?? null) === 'invalid_import_rows',
+        'A failed commit consumed the preview token and prevented retry.'
+    );
+
     [$crossSessionStatus, $crossSessionBody] = registrarAuthRequest($url, $sessionB, $csrfB, $token);
     $crossSessionJson = json_decode($crossSessionBody, true);
     registrarAuthAssert(
@@ -173,7 +189,7 @@ try {
         'A non-registrar account was not denied before import processing.'
     );
 
-    fwrite(STDOUT, "PASS: authenticated registrar endpoint checks (cross-session token rejection and non-registrar denial).\n");
+    fwrite(STDOUT, "PASS: authenticated registrar endpoint checks (failed-commit retry, cross-session token rejection, and non-registrar denial).\n");
 } catch (Throwable $error) {
     fwrite(STDERR, 'FAIL: authenticated registrar endpoint checks — ' . $error->getMessage() . "\n");
     exit(1);
