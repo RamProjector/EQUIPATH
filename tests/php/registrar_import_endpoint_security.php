@@ -40,7 +40,7 @@ try {
     stream_set_blocking($pipes[1], false);
     stream_set_blocking($pipes[2], false);
 
-    foreach (['registrar-import-preview.php', 'registrar-import-commit.php'] as $endpoint) {
+    foreach (['registrar-import-preview.php', 'registrar-import-commit.php', 'export-registrar-credits.php'] as $endpoint) {
         $url = 'http://127.0.0.1:' . $port . '/api/' . $endpoint;
         $ready = false;
         for ($attempt = 0; $attempt < 40; $attempt++) {
@@ -58,13 +58,17 @@ try {
 
         $body = $endpoint === 'registrar-import-preview.php' ? '' : '{"preview_token":"' . str_repeat('a', 64) . '"}';
         $headers = ['Content-Type: application/json', 'Content-Length: ' . strlen($body)];
-        [$csrfStatus, $csrfBody] = registrarRequest($url, 'POST', $body, $headers);
-        $csrfJson = json_decode($csrfBody, true);
-        if ($csrfStatus !== 403 || ($csrfJson['error'] ?? null) !== 'csrf_validation_failed') {
+        [$postStatus, $postBody] = registrarRequest($url, 'POST', $body, $headers);
+        $postJson = json_decode($postBody, true);
+        if ($endpoint === 'export-registrar-credits.php') {
+            if ($postStatus !== 405 || ($postJson['error'] ?? null) !== 'method_not_allowed') {
+                throw new RuntimeException('The registrar export endpoint did not reject POST with HTTP 405.');
+            }
+        } elseif ($postStatus !== 403 || ($postJson['error'] ?? null) !== 'csrf_validation_failed') {
             throw new RuntimeException($endpoint . ' did not reject POST without a valid CSRF token before DB access.');
         }
     }
-    fwrite(STDOUT, "PASS: registrar import HTTP guards (both endpoints reject GET and POST without CSRF).
+    fwrite(STDOUT, "PASS: registrar HTTP method/CSRF guards (import endpoints require CSRF; export endpoint allows GET only).
 ");
 } catch (Throwable $error) {
     fwrite(STDERR, 'FAIL: registrar import HTTP guards — ' . $error->getMessage() . "
