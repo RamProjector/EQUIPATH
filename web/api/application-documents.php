@@ -29,18 +29,21 @@ try {
     $access = new AccessControl();
     $userId = $access->requireAuthenticated();
     $db = ConnectionFactory::createFromEnvironment();
-    $access->requireAnyRole($db, ['applicant']);
+    $roles = $access->requireAnyRole($db, ['applicant', 'coordinator']);
+    $isCoordinator = in_array('coordinator', $roles, true);
 
     $applicationId = (int) $applicationValue;
     $owner = $db->prepare(
-        'SELECT application_id FROM applications
-         WHERE application_id = ? AND applicant_user_id = ? LIMIT 1'
+        'SELECT application_id, applicant_user_id, application_status FROM applications
+         WHERE application_id = ? LIMIT 1'
     );
-    $owner->bind_param('ii', $applicationId, $userId);
+    $owner->bind_param('i', $applicationId);
     $owner->execute();
-    $owned = $owner->get_result()->fetch_assoc() !== null;
+    $application = $owner->get_result()->fetch_assoc();
     $owner->close();
-    if (!$owned) {
+    $owned = is_array($application) && (int) $application['applicant_user_id'] === $userId;
+    $staffCanReview = $isCoordinator && is_array($application) && in_array((string) $application['application_status'], ['submitted', 'screening', 'needs_correction'], true);
+    if (!$owned && !$staffCanReview) {
         http_response_code(404);
         echo json_encode(['ok' => false, 'error' => 'application_not_found']);
         exit;

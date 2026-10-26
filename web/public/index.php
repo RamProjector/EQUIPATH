@@ -11,6 +11,7 @@ declare(strict_types=1);
   <title>EquiPath | ADFC ETEEAP</title>
   <link rel="stylesheet" href="../assets/css/app.css">
   <script src="../assets/js/app.js" defer></script>
+  <script src="../assets/js/screening.js" defer></script>
   <script src="../assets/js/applicant-applications.js" defer></script>
   <script src="../assets/js/assessments.js" defer></script>
   <script src="../assets/js/credit-recommendations.js" defer></script>
@@ -73,6 +74,43 @@ declare(strict_types=1);
         </div>
         <p id="notification-status" class="status-message" role="status" aria-live="polite"></p>
         <ul id="notification-list" class="notification-list" aria-label="Your notifications"></ul>
+      </section>
+
+      <section id="screening-workspace" class="inbox" aria-labelledby="screening-title" hidden>
+        <div class="inbox-heading">
+          <div>
+            <h3 id="screening-title">Application screening</h3>
+            <p class="section-intro">Review submitted applications and their evidence. Eligibility requires every active required document to be accepted.</p>
+          </div>
+          <button id="refresh-screening" class="button secondary compact" type="button">Refresh</button>
+        </div>
+        <p id="screening-status" class="status-message" role="status" aria-live="polite"></p>
+        <ul id="screening-candidate-list" class="notification-list" aria-label="Applications awaiting screening"></ul>
+        <div id="screening-editor" class="evaluation-editor" hidden>
+          <div class="inbox-heading">
+            <div>
+              <h4 id="screening-editor-title">Review application</h4>
+              <p id="screening-editor-subtitle" class="section-intro"></p>
+            </div>
+            <button id="close-screening-editor" class="button secondary compact" type="button">Close</button>
+          </div>
+          <h5>Required evidence</h5>
+          <label for="screening-document-notes">Document review reason</label>
+          <textarea id="screening-document-notes" rows="3" maxlength="900" aria-describedby="screening-document-notes-help"></textarea>
+          <p id="screening-document-notes-help" class="field-hint">A reason is required to reject a document or request a replacement. This note is shown to the applicant.</p>
+          <ul id="screening-document-list" class="notification-list" aria-label="Application evidence and review actions"></ul>
+          <form id="screening-decision-form" class="assessment-form">
+            <label for="screening-outcome">Screening outcome</label>
+            <select id="screening-outcome" required>
+              <option value="eligible">Eligible to proceed</option>
+              <option value="needs_correction">Return for corrections</option>
+              <option value="ineligible">Ineligible</option>
+            </select>
+            <label for="screening-notes">Applicant-facing feedback (required for correction or ineligibility outcomes)</label>
+            <textarea id="screening-notes" rows="4" maxlength="900"></textarea>
+            <button id="submit-screening-decision" class="button primary" type="submit">Record screening outcome</button>
+          </form>
+        </div>
       </section>
 
       <section id="applicant-workspace" class="inbox" aria-labelledby="applicant-title" hidden>

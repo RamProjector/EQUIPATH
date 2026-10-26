@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/web/src/Applications/ApplicationScreeningService.php';
+require_once dirname(__DIR__, 2) . '/web/src/Applications/ApplicationDocumentReviewService.php';
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $db = null;
@@ -11,10 +12,33 @@ $userIds = [];
 $programId = null;
 $periodId = null;
 $applicationIds = [];
+$documentIds = [];
+$requirementIds = [];
 
 function screeningInsertId(mysqli $db): int
 {
     return (int) $db->insert_id;
+}
+
+function screeningInsertDocument(mysqli $db, int $applicationId, int $userId, string $type, int $version): int
+{
+    $storageKey = hash('sha256', random_bytes(32));
+    $filename = 'screening-' . $type . '-v' . $version . '.pdf';
+    $mime = 'application/pdf';
+    $size = 128;
+    $digest = hash('sha256', $type . ':' . $version);
+    $status = 'pending';
+    $insert = $db->prepare(
+        'INSERT INTO application_documents
+            (application_id, uploaded_by, document_type, version_number, storage_key,
+             original_filename, detected_mime_type, file_size_bytes, sha256, review_status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    $insert->bind_param('iisisssiss', $applicationId, $userId, $type, $version, $storageKey, $filename, $mime, $size, $digest, $status);
+    $insert->execute();
+    $id = (int) $db->insert_id;
+    $insert->close();
+    return $id;
 }
 
 function screeningEnsureRole(mysqli $db, string $key, string $label, array &$createdRoleIds): int
@@ -84,6 +108,18 @@ try {
     $programId = screeningInsertId($db);
     $program->close();
 
+    foreach ([['identity_document', 'Identity document'], ['employment_certificate', 'Employment certificate']] as [$key, $name]) {
+        $required = 1;
+        $requirement = $db->prepare(
+            'INSERT INTO program_requirements (program_id, requirement_key, requirement_name, is_required, is_active)
+             VALUES (?, ?, ?, ?, TRUE)'
+        );
+        $requirement->bind_param('issi', $programId, $key, $name, $required);
+        $requirement->execute();
+        $requirementIds[] = (int) $db->insert_id;
+        $requirement->close();
+    }
+
     $periodName = 'Screening period ' . $suffix;
     $opensAt = date('Y-m-d H:i:s', time() - 3600);
     $closesAt = date('Y-m-d H:i:s', time() + 86400);
@@ -118,7 +154,18 @@ try {
         $application->close();
     }
 
+    $documentIds['identity'] = screeningInsertDocument($db, $applicationIds['submitted'], $userIds['applicant'], 'identity_document', 1);
+    $documentIds['employment_v1'] = screeningInsertDocument($db, $applicationIds['submitted'], $userIds['applicant'], 'employment_certificate', 1);
+    $documentIds['employment_v2'] = screeningInsertDocument($db, $applicationIds['submitted'], $userIds['applicant'], 'employment_certificate', 2);
+
     $service = new ApplicationScreeningService();
+    try {
+        $service->review($db, $userIds['coordinator'], $applicationIds['submitted'], 'eligible', '');
+        throw new RuntimeException('An application with unaccepted required documents was marked eligible.');
+    } catch (DomainException) {
+        // Eligibility requires accepted latest versions for every active required document.
+    }
+
     $result = $service->review(
         $db,
         $userIds['coordinator'],
@@ -195,6 +242,58 @@ try {
         throw new RuntimeException('Screening did not create the expected applicant notification.');
     }
 
+    $documentReview = new ApplicationDocumentReviewService();
+    $acceptedDocument = $documentReview->review(
+        $db,
+        $userIds['coordinator'],
+        $documentIds['identity'],
+        'accepted',
+        ''
+    );
+    if ($acceptedDocument['review_status'] !== 'accepted' ||
+        $acceptedDocument['application_status'] !== 'needs_correction') {
+        throw new RuntimeException('Accepted document review did not preserve the existing application state.');
+    }
+
+    try {
+        $documentReview->review($db, $userIds['coordinator'], $documentIds['identity'], 'rejected', 'Conflicting second review.');
+        throw new RuntimeException('A non-pending document was reviewed a second time.');
+    } catch (DomainException) {
+        // Only a pending document version can be reviewed.
+    }
+
+    try {
+        $documentReview->review($db, $userIds['coordinator'], $documentIds['employment_v1'], 'accepted', '');
+        throw new RuntimeException('An older document version was reviewed while a newer version existed.');
+    } catch (DomainException) {
+        // Only the latest version can be reviewed.
+    }
+
+    $replacement = $documentReview->review(
+        $db,
+        $userIds['coordinator'],
+        $documentIds['employment_v2'],
+        'replacement_requested',
+        'The scan is incomplete; please upload the complete certificate.'
+    );
+    if ($replacement['review_status'] !== 'replacement_requested' ||
+        $replacement['application_status'] !== 'needs_correction') {
+        throw new RuntimeException('Replacement request did not preserve the correction state.');
+    }
+    $documentNotification = $db->prepare(
+        "SELECT COUNT(*) AS total FROM notifications
+         WHERE recipient_user_id = ? AND related_application_id = ?
+           AND notification_type = 'application_document_review'
+           AND message LIKE '%scan is incomplete%'"
+    );
+    $documentNotification->bind_param('ii', $userIds['applicant'], $applicationIds['submitted']);
+    $documentNotification->execute();
+    $documentNotificationCount = (int) $documentNotification->get_result()->fetch_assoc()['total'];
+    $documentNotification->close();
+    if ($documentNotificationCount !== 1) {
+        throw new RuntimeException('Document replacement request did not notify the applicant.');
+    }
+
     try {
         $service->review($db, $userIds['coordinator'], $applicationIds['draft'], 'eligible', '');
         throw new RuntimeException('A draft application was accepted for screening.');
@@ -229,7 +328,7 @@ try {
         // Expected: only defined screening outcomes are accepted.
     }
 
-    fwrite(STDOUT, "PASS: screening service (status transition, review/history/audit/notification transaction, invalid state and outcome rejection).\n");
+    fwrite(STDOUT, "PASS: screening/document review services (status transitions, latest-version checks, review/history/audit/notification transactions, invalid state and outcome rejection).\n");
 } catch (Throwable $error) {
     fwrite(STDERR, 'FAIL: screening integration — ' . $error->getMessage() . "\n");
     $exitCode = 1;
@@ -240,6 +339,7 @@ try {
                 'DELETE FROM screening_reviews WHERE application_id = ?',
                 'DELETE FROM notifications WHERE related_application_id = ?',
                 'DELETE FROM application_status_history WHERE application_id = ?',
+                'DELETE FROM application_documents WHERE application_id = ?',
             ] as $sql) {
                 $delete = $db->prepare($sql);
                 $delete->bind_param('i', $applicationId);
@@ -275,6 +375,12 @@ try {
             $delete->close();
         }
 
+        foreach ($requirementIds as $requirementId) {
+            $delete = $db->prepare('DELETE FROM program_requirements WHERE program_requirement_id = ?');
+            $delete->bind_param('i', $requirementId);
+            $delete->execute();
+            $delete->close();
+        }
         if ($programId !== null) {
             $delete = $db->prepare('DELETE FROM academic_programs WHERE program_id = ?');
             $delete->bind_param('i', $programId);

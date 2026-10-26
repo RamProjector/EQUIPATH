@@ -36,6 +36,10 @@ final class ApplicationScreeningService
             throw new InvalidArgumentException('Applicant-facing screening feedback must be at most 900 bytes and contain no NUL bytes.');
         }
 
+        if (in_array($outcome, ['ineligible', 'needs_correction'], true) && trim($notes) === '') {
+            throw new InvalidArgumentException('A reason is required for ineligibility or correction outcomes.');
+        }
+
         $targetStatus = self::OUTCOME_STATUS[$outcome];
         $db->begin_transaction();
 
@@ -58,6 +62,47 @@ final class ApplicationScreeningService
             $previousStatus = (string) $application['application_status'];
             if (!in_array($previousStatus, ['submitted', 'screening', 'needs_correction'], true)) {
                 throw new DomainException('The application is not in a screenable status.');
+            }
+
+            if ($outcome === 'eligible') {
+                $requiredCountQuery = $db->prepare(
+                    'SELECT COUNT(*) AS total FROM program_requirements
+                     WHERE program_id = (SELECT program_id FROM applications WHERE application_id = ?)
+                       AND is_active = TRUE AND is_required = TRUE'
+                );
+                $requiredCountQuery->bind_param('i', $applicationId);
+                $requiredCountQuery->execute();
+                $requiredCount = (int) ($requiredCountQuery->get_result()->fetch_assoc()['total'] ?? 0);
+                $requiredCountQuery->close();
+                if ($requiredCount < 1) {
+                    throw new DomainException('Eligibility cannot be recorded without active required-document configuration.');
+                }
+
+                $missingQuery = $db->prepare(
+                    "SELECT COUNT(*) AS total
+                     FROM program_requirements pr
+                     WHERE pr.program_id = (SELECT program_id FROM applications WHERE application_id = ?)
+                       AND pr.is_active = TRUE AND pr.is_required = TRUE
+                       AND NOT EXISTS (
+                         SELECT 1 FROM application_documents d
+                         WHERE d.application_id = ? AND d.document_type = pr.requirement_key
+                           AND d.version_number = (
+                             SELECT MAX(latest.version_number)
+                             FROM application_documents latest
+                             WHERE latest.application_id = d.application_id
+                               AND latest.document_type = d.document_type
+                           )
+                           AND d.review_status = 'accepted'
+                           AND d.detected_mime_type = 'application/pdf'
+                       )"
+                );
+                $missingQuery->bind_param('ii', $applicationId, $applicationId);
+                $missingQuery->execute();
+                $missingRequired = (int) ($missingQuery->get_result()->fetch_assoc()['total'] ?? 0);
+                $missingQuery->close();
+                if ($missingRequired > 0) {
+                    throw new DomainException('Every active required document must have an accepted latest PDF version before the application can be marked eligible.');
+                }
             }
 
             $review = $db->prepare(

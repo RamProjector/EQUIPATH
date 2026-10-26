@@ -62,7 +62,10 @@ try {
     stream_set_blocking($pipes[1], false);
     stream_set_blocking($pipes[2], false);
 
-    $url = 'http://127.0.0.1:' . $port . '/api/screen-application.php';
+    $base = 'http://127.0.0.1:' . $port . '/api/';
+    $url = $base . 'screen-application.php';
+    $candidateUrl = $base . 'screening-candidates.php';
+    $documentReviewUrl = $base . 'review-application-document.php';
     $ready = false;
     for ($attempt = 0; $attempt < 40; $attempt++) {
         [$status] = requestScreeningEndpoint($url, 'GET');
@@ -82,6 +85,26 @@ try {
         throw new RuntimeException('Screening endpoint did not reject GET with HTTP 405.');
     }
 
+    [$candidateMethodStatus, $candidateMethodBody] = requestScreeningEndpoint($candidateUrl, 'POST');
+    if ($candidateMethodStatus !== 405 || (json_decode($candidateMethodBody, true)['error'] ?? null) !== 'method_not_allowed') {
+        throw new RuntimeException('Screening candidate endpoint did not reject POST with HTTP 405.');
+    }
+    [$candidateAuthStatus, $candidateAuthBody] = requestScreeningEndpoint($candidateUrl, 'GET');
+    if ($candidateAuthStatus !== 401 || (json_decode($candidateAuthBody, true)['error'] ?? null) !== 'authentication_required') {
+        throw new RuntimeException('Screening candidate endpoint was not protected by authentication.');
+    }
+    [$reviewMethodStatus, $reviewMethodBody] = requestScreeningEndpoint($documentReviewUrl, 'GET');
+    if ($reviewMethodStatus !== 405 || (json_decode($reviewMethodBody, true)['error'] ?? null) !== 'method_not_allowed') {
+        throw new RuntimeException('Document review endpoint did not reject GET with HTTP 405.');
+    }
+    [$reviewCsrfStatus, $reviewCsrfBody] = requestScreeningEndpoint($documentReviewUrl, 'POST', '{"document_id":1,"outcome":"accepted"}', [
+        'Content-Type: application/json',
+        'Content-Length: ' . strlen('{"document_id":1,"outcome":"accepted"}'),
+    ]);
+    if ($reviewCsrfStatus !== 403 || (json_decode($reviewCsrfBody, true)['error'] ?? null) !== 'csrf_validation_failed') {
+        throw new RuntimeException('Document review POST without CSRF was not denied before authentication/database access.');
+    }
+
     [$csrfStatus, $csrfBody] = requestScreeningEndpoint($url, 'POST', '{"application_id":1,"outcome":"eligible"}', [
         'Content-Type: application/json',
         'Content-Length: ' . strlen('{"application_id":1,"outcome":"eligible"}'),
@@ -91,7 +114,7 @@ try {
         throw new RuntimeException('Screening POST without a valid CSRF token was not rejected before authentication/database access.');
     }
 
-    fwrite(STDOUT, "PASS: screening endpoint HTTP guards (GET rejected; POST without CSRF token denied).\n");
+    fwrite(STDOUT, "PASS: screening and document review HTTP guards (method restrictions, authentication and CSRF).\n");
 } catch (Throwable $error) {
     fwrite(STDERR, 'FAIL: screening endpoint HTTP guards — ' . $error->getMessage() . "\n");
     $exitCode = 1;

@@ -36,7 +36,8 @@ try {
     $access = new AccessControl();
     $userId = $access->requireAuthenticated();
     $db = ConnectionFactory::createFromEnvironment();
-    $access->requireAnyRole($db, ['applicant', 'evaluator']);
+    $roles = $access->requireAnyRole($db, ['applicant', 'evaluator', 'coordinator']);
+    $isCoordinator = in_array('coordinator', $roles, true);
 
     $documentId = (int) $documentValue;
     $statement = $db->prepare(
@@ -54,9 +55,26 @@ try {
     }
 
     $applicationId = (int) $document['application_id'];
-    // Applicants may retrieve only their own documents; evaluators must have
-    // a current assignment. No implicit administrator/staff access is granted.
-    $access->requireApplicationAccess($db, $applicationId);
+    // Coordinators may retrieve evidence only while the application is in the
+    // screening/correction queue. Applicants and evaluators use the narrower
+    // shared ownership/assignment policy. Administrator access is not implicit.
+    if ($isCoordinator) {
+        $applicationQuery = $db->prepare(
+            'SELECT application_status FROM applications WHERE application_id = ? LIMIT 1'
+        );
+        $applicationQuery->bind_param('i', $applicationId);
+        $applicationQuery->execute();
+        $applicationRow = $applicationQuery->get_result()->fetch_assoc();
+        $applicationQuery->close();
+        if (!is_array($applicationRow) ||
+            !in_array((string) $applicationRow['application_status'], ['submitted', 'screening', 'needs_correction'], true)) {
+            // A coordinator who is also the owner or assigned evaluator still
+            // receives only the narrower access allowed by the shared policy.
+            $access->requireApplicationAccess($db, $applicationId);
+        }
+    } else {
+        $access->requireApplicationAccess($db, $applicationId);
+    }
 
     if ($document['detected_mime_type'] !== 'application/pdf' ||
         !preg_match('/^[a-f0-9]{64}$/D', (string) $document['storage_key']) ||
