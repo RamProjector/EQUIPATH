@@ -60,6 +60,8 @@ try {
     $optionsUrl = $base . 'evaluator-assignment-options.php';
     $rubricOptionsUrl = $base . 'rubric-management.php';
     $saveRubricUrl = $base . 'save-rubric.php';
+    $reportsUrl = $base . 'reports.php';
+    $exportReportUrl = $base . 'export-report.php';
     $ready = false;
     for ($attempt = 0; $attempt < 40; $attempt++) {
         [$status] = requestAssignmentEndpoint($url, 'GET');
@@ -107,6 +109,17 @@ try {
     ]);
     if ($saveRubricCsrfStatus !== 403 || (json_decode($saveRubricCsrfBody, true)['error'] ?? null) !== 'csrf_validation_failed') {
         throw new RuntimeException('Rubric save POST without CSRF was not denied before authentication/database access.');
+    }
+
+    foreach ([$reportsUrl => 'aggregate reports', $exportReportUrl => 'report export'] as $reportUrl => $label) {
+        [$reportMethodStatus, $reportMethodBody] = requestAssignmentEndpoint($reportUrl, 'POST');
+        if ($reportMethodStatus !== 405 || (json_decode($reportMethodBody, true)['error'] ?? null) !== 'method_not_allowed') {
+            throw new RuntimeException(ucfirst($label) . ' endpoint did not reject POST with HTTP 405.');
+        }
+        [$reportAuthStatus, $reportAuthBody] = requestAssignmentEndpoint($reportUrl, 'GET');
+        if ($reportAuthStatus !== 401 || (json_decode($reportAuthBody, true)['error'] ?? null) !== 'authentication_required') {
+            throw new RuntimeException(ucfirst($label) . ' endpoint was not protected by authentication.');
+        }
     }
 
     [$csrfStatus, $csrfBody] = requestAssignmentEndpoint($url, 'POST', $body, [
