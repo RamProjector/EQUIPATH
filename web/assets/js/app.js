@@ -235,6 +235,19 @@
         complete.className = "assignment-state";
         complete.textContent = "Submitted";
         row.append(complete);
+        if (["under_evaluation", "assessment_scheduled", "awaiting_decision"].includes(item.application_status) &&
+            Number.isSafeInteger(item.evaluator_assignment_id) && item.evaluator_assignment_id > 0) {
+          const recommendationsButton = document.createElement("button");
+          recommendationsButton.type = "button";
+          recommendationsButton.className = "button secondary compact";
+          recommendationsButton.textContent = "Credit recommendations";
+          recommendationsButton.addEventListener("click", () => {
+            document.dispatchEvent(new CustomEvent("equipath:open-credit-recommendations", {
+              detail: { assignment: item }
+            }));
+          });
+          row.append(recommendationsButton);
+        }
       } else if (item.active_rubric_count !== 1 || !Number.isSafeInteger(item.active_rubric_id)) {
         const warning = document.createElement("p");
         warning.className = "rubric-warning";
