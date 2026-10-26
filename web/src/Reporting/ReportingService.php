@@ -87,8 +87,8 @@ final class ReportingService
         $result = $statement->get_result();
         $rows = [];
         while ($row = $result->fetch_assoc()) {
-            foreach ($row as $key => $value) {
-                if ($value !== null && $key !== 'code' && $key !== 'name') $row[$key] = (int) $value;
+            if (array_key_exists('total', $row)) {
+                $row['total'] = (int) $row['total'];
             }
             $rows[] = $row;
         }
