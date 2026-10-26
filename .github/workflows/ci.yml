@@ -242,6 +242,14 @@ jobs:
       - name: Run registrar import parser validation tests
         run: php tests/php/registrar_import_service_validation.php
 
+      - name: Run registrar import MySQL integration tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: equipath_eteeap
+        run: php tests/php/registrar_import_integration.php
+
       - name: Run session security tests
         run: php tests/php/session_security.php
 
