@@ -92,7 +92,7 @@ test('public workspace exposes accessible sign-in and notification controls', fu
     $page = (string) file_get_contents($root . '/web/public/index.php');
     $script = (string) file_get_contents($root . '/web/assets/js/app.js');
 
-    foreach (['id="login-form"', 'id="email"', 'id="password"', 'id="login-status"', 'id="workspace"', 'id="notification-list"', 'id="refresh-notifications"', 'id="logout-button"', 'id="evaluation-workspace"', 'id="evaluation-assignment-list"', 'id="evaluation-editor"', 'id="evaluation-form"', 'id="evaluation-criteria"', 'id="save-evaluation"', 'id="submit-evaluation"', 'id="assessment-workspace"', 'id="assessment-form"', 'id="assessment-list"', 'id="assessment-application"', 'id="assessment-result-form"', 'aria-live="polite"'] as $expected) {
+    foreach (['id="login-form"', 'id="email"', 'id="password"', 'id="login-status"', 'id="workspace"', 'id="notification-list"', 'id="refresh-notifications"', 'id="logout-button"', 'id="evaluation-workspace"', 'id="evaluation-assignment-list"', 'id="evaluation-editor"', 'id="evaluation-form"', 'id="evaluation-criteria"', 'id="save-evaluation"', 'id="submit-evaluation"', 'id="assessment-workspace"', 'id="assessment-form"', 'id="assessment-list"', 'id="assessment-application"', 'id="assessment-result-form"', 'id="credit-recommendations-editor"', 'id="credit-recommendations-form"', 'id="credit-recommendation-fields"', 'aria-live="polite"'] as $expected) {
         assertTrue(str_contains($page, $expected), "Workspace markup is missing required accessible control: {$expected}");
     }
     foreach (['../api/csrf.php', '../api/authenticate.php', '../api/logout.php', '../api/notifications.php', '../api/mark-notification-read.php', '../api/evaluation-assignments.php', '../api/evaluation-rubric.php', '../api/save-evaluation.php'] as $endpoint) {
@@ -103,6 +103,12 @@ test('public workspace exposes accessible sign-in and notification controls', fu
         assertTrue(str_contains($assessmentScript, $endpoint), "Assessment client is missing API integration: {$endpoint}");
     }
     assertTrue(!str_contains($assessmentScript, 'innerHTML'), 'Assessment data must be rendered as text, not interpreted as markup.');
+    $creditScript = (string) file_get_contents($root . '/web/assets/js/credit-recommendations.js');
+    foreach (['../api/credit-recommendations.php', '../api/submit-credit-recommendations.php'] as $endpoint) {
+        assertTrue(str_contains($creditScript, $endpoint), "Credit recommendation client is missing API integration: {$endpoint}");
+    }
+    assertTrue(str_contains($page, 'assets/js/credit-recommendations.js'), 'Landing page must load the credit recommendation client module.');
+    assertTrue(!str_contains($creditScript, 'innerHTML'), 'Credit recommendation data must be rendered as text, not interpreted as markup.');
     assertTrue(str_contains($page, 'assets/js/assessments.js'), 'Landing page must load the assessment client module.');
     assertTrue(str_contains($script, 'message.textContent'), 'Notification message must be rendered as text, not interpreted as markup.');
     assertTrue(!str_contains($script, 'innerHTML'), 'Workspace script must not use innerHTML for untrusted server-provided notification content.');

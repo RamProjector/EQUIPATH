@@ -39,7 +39,7 @@ try {
          INNER JOIN academic_programs p ON p.program_id = a.program_id
          WHERE ea.evaluator_user_id = ?
            AND ea.assignment_status IN ('assigned', 'in_progress', 'submitted')
-           AND a.application_status = 'under_evaluation'
+           AND a.application_status IN ('under_evaluation', 'assessment_scheduled', 'awaiting_decision')
          ORDER BY a.updated_at DESC, ea.evaluator_assignment_id DESC
          LIMIT 50"
     );
