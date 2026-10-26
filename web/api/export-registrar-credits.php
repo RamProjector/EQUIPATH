@@ -17,6 +17,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
     exit;
 }
 
+/** Read a report date query parameter without accepting array-shaped input. */
 function registrarExportDate(string $key): ?string
 {
     if (!array_key_exists($key, $_GET)) return null;
@@ -24,6 +25,7 @@ function registrarExportDate(string $key): ?string
     return $_GET[$key];
 }
 
+/** Prefix spreadsheet formula-leading text values to prevent CSV formula execution. */
 function registrarCsvCell(string $value): string
 {
     $trimmed = ltrim($value);
@@ -63,7 +65,17 @@ try {
     $statement = $db->prepare($sql);
     if (!$allCurrentCredits) $statement->bind_param('ss', $range['from'], $range['to']);
     $statement->execute();
-    $result = $statement->get_result();
+
+    // Bind columns and fetch one row at a time so all-current exports do not
+    // buffer the entire result set in PHP memory.
+    $statement->bind_result(
+        $applicationNumber,
+        $programCode,
+        $courseCode,
+        $courseTitle,
+        $approvedCredits,
+        $decidedAt
+    );
 
     header('Content-Type: text/csv; charset=utf-8');
     $filenameRange = $allCurrentCredits ? 'all-current' : $range['from'] . '-to-' . $range['to'];
@@ -71,14 +83,14 @@ try {
     $output = fopen('php://output', 'w');
     if ($output === false) throw new RuntimeException('Unable to stream registrar export.');
     fputcsv($output, ['application_number', 'program_code', 'course_code', 'course_title', 'approved_credits', 'decision_at'], ',', '"', '');
-    while ($row = $result->fetch_assoc()) {
+    while ($statement->fetch()) {
         fputcsv($output, [
-            registrarCsvCell((string) $row['application_number']),
-            registrarCsvCell((string) $row['program_code']),
-            registrarCsvCell((string) $row['course_code']),
-            registrarCsvCell((string) $row['course_title']),
-            number_format((float) $row['approved_credits'], 2, '.', ''),
-            (string) $row['decided_at'],
+            registrarCsvCell((string) $applicationNumber),
+            registrarCsvCell((string) $programCode),
+            registrarCsvCell((string) $courseCode),
+            registrarCsvCell((string) $courseTitle),
+            number_format((float) $approvedCredits, 2, '.', ''),
+            (string) $decidedAt,
         ], ',', '"', '');
     }
     fclose($output);
