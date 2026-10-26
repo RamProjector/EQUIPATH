@@ -7,6 +7,7 @@
     applications: "../api/applications.php",
     create: "../api/create-application.php",
     documents: "../api/application-documents.php",
+    history: "../api/application-history.php",
     upload: "../api/upload-document.php",
     submit: "../api/submit-application.php",
     download: "../api/download-document.php"
@@ -25,6 +26,8 @@
   const documentTitle = byId("applicant-document-title");
   const documentSubtitle = byId("applicant-document-subtitle");
   const documentList = byId("applicant-document-list");
+  const statusHistoryList = byId("application-status-history");
+  const screeningFeedbackList = byId("application-screening-feedback");
   const requirementSelect = byId("applicant-document-type");
   const fileInput = byId("applicant-document-file");
   const uploadForm = byId("applicant-upload-form");
@@ -248,6 +251,56 @@
     }
   }
 
+  function renderHistory(history) {
+    statusHistoryList.replaceChildren();
+    screeningFeedbackList.replaceChildren();
+    const events = Array.isArray(history.status_history) ? history.status_history : [];
+    if (events.length === 0) {
+      addText(statusHistoryList, "li", "empty-state", "No status changes have been recorded yet.");
+    } else {
+      for (const item of events) {
+        const row = document.createElement("li");
+        row.className = "notification-item";
+        const content = document.createElement("div");
+        content.className = "notification-content";
+        const transition = item.from_status
+          ? item.from_status.replaceAll("_", " ") + " → " + item.to_status.replaceAll("_", " ")
+          : "Application created · " + item.to_status.replaceAll("_", " ");
+        addText(content, "h4", "notification-title", transition);
+        addText(content, "p", "notification-meta", item.changed_at);
+        if (item.reason) addText(content, "p", "notification-message", item.reason);
+        row.append(content);
+        statusHistoryList.append(row);
+      }
+    }
+
+    const feedback = Array.isArray(history.screening_feedback) ? history.screening_feedback : [];
+    if (feedback.length === 0) {
+      addText(screeningFeedbackList, "li", "empty-state", "No screening feedback has been recorded yet.");
+    } else {
+      for (const item of feedback) {
+        const row = document.createElement("li");
+        row.className = "notification-item";
+        const content = document.createElement("div");
+        content.className = "notification-content";
+        addText(content, "h4", "notification-title", item.outcome.replaceAll("_", " "));
+        addText(content, "p", "notification-meta", item.reviewed_at);
+        addText(content, "p", "notification-message", item.notes || "No additional feedback was provided.");
+        row.append(content);
+        screeningFeedbackList.append(row);
+      }
+    }
+  }
+
+  async function loadHistory(application) {
+    const response = await fetch(urls.history + "?application_id=" + encodeURIComponent(String(application.application_id)), {
+      method: "GET", credentials: "same-origin", cache: "no-store",
+      headers: { "Accept": "application/json" }
+    });
+    const data = await readJson(response);
+    renderHistory(data.history);
+  }
+
   async function openDocuments(application) {
     selectedApplication = application;
     documentPanel.hidden = false;
@@ -256,7 +309,7 @@
     renderRequirements();
     setStatus("Loading documents…");
     try {
-      await loadDocuments(application);
+      await Promise.all([loadDocuments(application), loadHistory(application)]);
       setStatus("Application status: " + application.application_status.replaceAll("_", " "), "success");
       documentPanel.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (error) {
@@ -276,7 +329,7 @@
         if (refreshed) {
           selectedApplication = refreshed;
           renderRequirements();
-          await loadDocuments(refreshed);
+          await Promise.all([loadDocuments(refreshed), loadHistory(refreshed)]);
         } else {
           selectedApplication = null;
           documentPanel.hidden = true;
@@ -357,7 +410,7 @@
       await loadApplications();
       selectedApplication = applications.find(item => item.application_id === submittedApplicationId) || null;
       if (selectedApplication) {
-        await loadDocuments(selectedApplication);
+        await Promise.all([loadDocuments(selectedApplication), loadHistory(selectedApplication)]);
         renderRequirements();
       } else {
         documentPanel.hidden = true;
@@ -481,6 +534,8 @@
     workspace.hidden = true;
     applicationList.replaceChildren();
     documentList.replaceChildren();
+    statusHistoryList.replaceChildren();
+    screeningFeedbackList.replaceChildren();
     programSelect.replaceChildren();
     periodSelect.replaceChildren();
     requirementSelect.replaceChildren();
