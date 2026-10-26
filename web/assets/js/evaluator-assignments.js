@@ -212,6 +212,7 @@
       setStatus(error.message || "Could not assign evaluator.", "error");
     } finally {
       busy = false;
+      button.disabled = false;
       refreshButton.disabled = false;
     }
   }
