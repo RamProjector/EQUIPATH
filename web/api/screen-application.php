@@ -41,7 +41,12 @@ try {
     // implicitly granted this operation.
     $access->requireAnyRole($db, ['coordinator']);
 
-    $rawBody = file_get_contents('php://input');
+    $rawBody = file_get_contents('php://input', false, null, 0, 8193);
+    if (is_string($rawBody) && strlen($rawBody) > 8192) {
+        http_response_code(413);
+        echo json_encode(['ok' => false, 'error' => 'payload_too_large']);
+        exit;
+    }
     if (!is_string($rawBody) || $rawBody === '') {
         http_response_code(400);
         echo json_encode(['ok' => false, 'error' => 'invalid_json']);
