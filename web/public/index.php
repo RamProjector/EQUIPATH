@@ -138,7 +138,7 @@ declare(strict_types=1);
 
         <div id="assessment-manager" class="evaluation-editor" hidden>
           <h4>Schedule an assessment</h4>
-          <p class="section-intro">Only eligible applications, or applications whose assigned evaluations are all submitted, can be scheduled.</p>
+          <p class="section-intro">Assessment scheduling requires every active evaluator assignment to be submitted. Additional events may be scheduled after the first event is created.</p>
           <form id="assessment-form" class="assessment-form">
             <label for="assessment-application">Application</label>
             <select id="assessment-application" required>
