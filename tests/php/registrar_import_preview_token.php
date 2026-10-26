@@ -57,4 +57,4 @@ registrarPreviewAssert(
     'A malformed stored token hash must be rejected.'
 );
 
-fwrite(STDOUT, "PASS: registrar preview token lifecycle (validity, expiry boundary, stale/future timestamps, user binding, token mismatch, replay/missing state).\\n");
+fwrite(STDOUT, "PASS: registrar preview token lifecycle (validity, expiry boundary, stale/future timestamps, user binding, token mismatch, replay/missing state).\n");
