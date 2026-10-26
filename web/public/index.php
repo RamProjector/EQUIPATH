@@ -106,7 +106,7 @@ declare(strict_types=1);
               <option value="needs_correction">Return for corrections</option>
               <option value="ineligible">Ineligible</option>
             </select>
-            <label for="screening-notes">Applicant-facing feedback (optional; required-document reasons are required when requesting corrections)</label>
+            <label for="screening-notes">Applicant-facing feedback (required for correction or ineligibility outcomes)</label>
             <textarea id="screening-notes" rows="4" maxlength="900"></textarea>
             <button id="submit-screening-decision" class="button primary" type="submit">Record screening outcome</button>
           </form>
