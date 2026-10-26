@@ -11,6 +11,7 @@ $closedProgramId = null;
 $periodId = null;
 $closedPeriodId = null;
 $applicationId = null;
+$createdRoleId = null;
 
 try {
     $db = new mysqli(
@@ -40,10 +41,18 @@ try {
     $role->execute();
     $roleRow = $role->get_result()->fetch_assoc();
     $role->close();
-    if (!is_array($roleRow)) {
-        throw new RuntimeException('Applicant role is missing from test database.');
+    if (is_array($roleRow)) {
+        $roleId = (int) $roleRow['role_id'];
+    } else {
+        $roleKey = 'applicant';
+        $roleLabel = 'Applicant';
+        $createRole = $db->prepare('INSERT INTO roles (role_key, display_name) VALUES (?, ?)');
+        $createRole->bind_param('ss', $roleKey, $roleLabel);
+        $createRole->execute();
+        $roleId = (int) $db->insert_id;
+        $createdRoleId = $roleId;
+        $createRole->close();
     }
-    $roleId = (int) $roleRow['role_id'];
     $userRole = $db->prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)');
     $userRole->bind_param('ii', $userId, $roleId);
     $userRole->execute();
@@ -173,6 +182,12 @@ try {
             $delete->close();
             $delete = $db->prepare('DELETE FROM users WHERE user_id = ?');
             $delete->bind_param('i', $userId);
+            $delete->execute();
+            $delete->close();
+        }
+        if ($createdRoleId !== null) {
+            $delete = $db->prepare('DELETE FROM roles WHERE role_id = ?');
+            $delete->bind_param('i', $createdRoleId);
             $delete->execute();
             $delete->close();
         }
