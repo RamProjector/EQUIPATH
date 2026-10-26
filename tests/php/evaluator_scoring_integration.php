@@ -161,6 +161,37 @@ try {
     }
 
     $service = new EvaluatorScoringService();
+
+    // Ambiguous active rubrics must block scoring rather than silently choose
+    // a version or mix criterion scores across rubric definitions.
+    $alternateRubricName = 'Ambiguous rubric ' . $suffix;
+    $alternateVersion = 2;
+    $alternateActive = 1;
+    $alternateRubric = $db->prepare(
+        'INSERT INTO evaluation_rubrics (program_id, rubric_name, version_number, is_active)
+         VALUES (?, ?, ?, ?)'
+    );
+    $alternateRubric->bind_param('isii', $programId, $alternateRubricName, $alternateVersion, $alternateActive);
+    $alternateRubric->execute();
+    $alternateRubricId = (int) $db->insert_id;
+    $alternateRubric->close();
+    try {
+        $service->save(
+            $db,
+            $userIds['evaluator'],
+            $assignmentIds['valid'],
+            $rubricId,
+            [['criterion_id' => $criterionIds[0], 'score' => 8]],
+            false
+        );
+        throw new RuntimeException('Service accepted multiple active rubrics for the same program.');
+    } catch (DomainException) {
+        // Ambiguous rubric configuration must fail closed.
+    }
+    $deleteAlternateRubric = $db->prepare('DELETE FROM evaluation_rubrics WHERE rubric_id = ?');
+    $deleteAlternateRubric->bind_param('i', $alternateRubricId);
+    $deleteAlternateRubric->execute();
+    $deleteAlternateRubric->close();
     $draft = $service->save(
         $db,
         $userIds['evaluator'],

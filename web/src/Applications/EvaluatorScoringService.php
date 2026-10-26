@@ -64,15 +64,20 @@ final class EvaluatorScoringService
             $rubricQuery = $db->prepare(
                 'SELECT rubric_id
                  FROM evaluation_rubrics
-                 WHERE rubric_id = ? AND program_id = ? AND is_active = 1
+                 WHERE program_id = ? AND is_active = 1
+                 ORDER BY version_number DESC, rubric_id DESC
                  FOR UPDATE'
             );
-            $rubricQuery->bind_param('ii', $rubricId, $programId);
+            $rubricQuery->bind_param('i', $programId);
             $rubricQuery->execute();
-            $rubricExists = $rubricQuery->get_result()->num_rows === 1;
+            $rubricResult = $rubricQuery->get_result();
+            $activeRubricIds = [];
+            while ($rubricRow = $rubricResult->fetch_assoc()) {
+                $activeRubricIds[] = (int) $rubricRow['rubric_id'];
+            }
             $rubricQuery->close();
-            if (!$rubricExists) {
-                throw new DomainException('The rubric is not active for this application program.');
+            if (count($activeRubricIds) !== 1 || $activeRubricIds[0] !== $rubricId) {
+                throw new DomainException('Exactly one active rubric must exist for the application program, and it must match the selected rubric.');
             }
 
             $criteriaQuery = $db->prepare(
