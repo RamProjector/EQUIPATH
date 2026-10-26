@@ -95,6 +95,17 @@ final class NotificationService
                 }
                 $update->close();
 
+                $timestamp = $db->prepare(
+                    'SELECT read_at FROM notifications WHERE notification_id = ? AND recipient_user_id = ?'
+                );
+                $timestamp->bind_param('ii', $notificationId, $recipientUserId);
+                $timestamp->execute();
+                $timestampRow = $timestamp->get_result()->fetch_assoc();
+                $timestamp->close();
+                if (!is_array($timestampRow) || !is_string($timestampRow['read_at'])) {
+                    throw new RuntimeException('The notification read timestamp could not be retrieved.');
+                }
+
                 $actionKey = 'notification.read';
                 $entityType = 'notification';
                 $auditOutcome = 'success';
@@ -118,7 +129,7 @@ final class NotificationService
             }
 
             $readAt = $row['read_at'] === null
-                ? date('Y-m-d H:i:s')
+                ? (string) $timestampRow['read_at']
                 : (string) $row['read_at'];
             $db->commit();
         } catch (Throwable $error) {
