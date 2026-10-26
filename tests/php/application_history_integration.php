@@ -21,7 +21,7 @@ try {
     $db->set_charset('utf8mb4');
     $suffix = bin2hex(random_bytes(8));
 
-    foreach (['owner', 'other'] as $kind) {
+    foreach (['owner', 'other', 'coordinator'] as $kind) {
         $email = $kind . '-history-' . $suffix . '@example.invalid';
         $passwordHash = password_hash('history-test-password', PASSWORD_DEFAULT);
         $givenName = ucfirst($kind);
@@ -87,13 +87,7 @@ try {
         'INSERT INTO screening_reviews (application_id, reviewer_user_id, outcome, notes, reviewed_at)
          VALUES (?, ?, ?, ?, ?)'
     );
-    $reviewerRoleKey = 'coordinator';
-    $reviewerQuery = $db->prepare('SELECT user_id FROM users WHERE user_id = ?');
-    $reviewerQuery->bind_param('i', $userIds['owner']);
-    $reviewerQuery->execute();
-    $reviewerQuery->close();
-    // The schema records a reviewer user; this isolated fixture uses a dedicated user row.
-    $review->bind_param('iisss', $applicationId, $userIds['owner'], $outcome, $feedback, $reviewedAt);
+    $review->bind_param('iisss', $applicationId, $userIds['coordinator'], $outcome, $feedback, $reviewedAt);
     $review->execute();
     $review->close();
 
