@@ -92,10 +92,10 @@ test('public workspace exposes accessible sign-in and notification controls', fu
     $page = (string) file_get_contents($root . '/web/public/index.php');
     $script = (string) file_get_contents($root . '/web/assets/js/app.js');
 
-    foreach (['id="login-form"', 'id="email"', 'id="password"', 'id="login-status"', 'id="workspace"', 'id="notification-list"', 'id="refresh-notifications"', 'id="logout-button"', 'aria-live="polite"'] as $expected) {
+    foreach (['id="login-form"', 'id="email"', 'id="password"', 'id="login-status"', 'id="workspace"', 'id="notification-list"', 'id="refresh-notifications"', 'id="logout-button"', 'id="evaluation-workspace"', 'id="evaluation-assignment-list"', 'id="evaluation-editor"', 'id="evaluation-form"', 'id="evaluation-criteria"', 'id="save-evaluation"', 'id="submit-evaluation"', 'aria-live="polite"'] as $expected) {
         assertTrue(str_contains($page, $expected), "Workspace markup is missing required accessible control: {$expected}");
     }
-    foreach (['../api/csrf.php', '../api/authenticate.php', '../api/logout.php', '../api/notifications.php', '../api/mark-notification-read.php'] as $endpoint) {
+    foreach (['../api/csrf.php', '../api/authenticate.php', '../api/logout.php', '../api/notifications.php', '../api/mark-notification-read.php', '../api/evaluation-assignments.php', '../api/evaluation-rubric.php', '../api/save-evaluation.php'] as $endpoint) {
         assertTrue(str_contains($script, $endpoint), "Workspace script is missing API integration: {$endpoint}");
     }
     assertTrue(str_contains($script, 'message.textContent'), 'Notification message must be rendered as text, not interpreted as markup.');
