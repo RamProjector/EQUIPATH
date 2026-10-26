@@ -50,6 +50,9 @@ jobs:
       - name: Run PHP smoke tests
         run: php tests/php/run.php
 
+      - name: Check web JavaScript syntax
+        run: node --check web/assets/js/app.js
+
       - name: Run document upload validation tests
         run: php tests/php/document_upload_validation.php
 

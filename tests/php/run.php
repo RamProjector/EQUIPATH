@@ -87,6 +87,21 @@ test('public landing page includes core project identity and workflow labels', f
     }
 });
 
+test('public workspace exposes accessible sign-in and notification controls', function (): void {
+    $root = dirname(__DIR__, 2);
+    $page = (string) file_get_contents($root . '/web/public/index.php');
+    $script = (string) file_get_contents($root . '/web/assets/js/app.js');
+
+    foreach (['id="login-form"', 'id="email"', 'id="password"', 'id="login-status"', 'id="workspace"', 'id="notification-list"', 'id="refresh-notifications"', 'id="logout-button"', 'aria-live="polite"'] as $expected) {
+        assertTrue(str_contains($page, $expected), "Workspace markup is missing required accessible control: {$expected}");
+    }
+    foreach (['../api/csrf.php', '../api/authenticate.php', '../api/logout.php', '../api/notifications.php', '../api/mark-notification-read.php'] as $endpoint) {
+        assertTrue(str_contains($script, $endpoint), "Workspace script is missing API integration: {$endpoint}");
+    }
+    assertTrue(str_contains($script, 'message.textContent'), 'Notification message must be rendered as text, not interpreted as markup.');
+    assertTrue(!str_contains($script, 'innerHTML'), 'Workspace script must not use innerHTML for untrusted server-provided notification content.');
+});
+
 $total = count($tests);
 $passed = count(array_filter($tests, static fn (array $test): bool => $test['passed']));
 fwrite(STDOUT, "\nPHP smoke tests: {$passed}/{$total} passed.\n");
