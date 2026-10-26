@@ -34,6 +34,27 @@ function registrarAuthSeedSession(string $directory, string $sessionId, array $v
     session_write_close();
 }
 
+
+function registrarAuthGet(string $url, string $sessionId, string $query = ''): array
+{
+    $target = $url . $query;
+    $context = stream_context_create(['http' => [
+        'method' => 'GET',
+        'header' => implode("\r\n", [
+            'Connection: close',
+            'Cookie: EQUIPATH_SESSION=' . $sessionId,
+        ]),
+        'ignore_errors' => true,
+        'timeout' => 5,
+    ]]);
+    $response = @file_get_contents($target, false, $context);
+    $status = 0;
+    foreach ($http_response_header ?? [] as $line) {
+        if (preg_match('/^HTTP\/\S+\s+(\d{3})/', $line, $match)) $status = (int) $match[1];
+    }
+    return [$status, is_string($response) ? $response : ''];
+}
+
 function registrarAuthRequest(string $url, string $sessionId, string $csrf, string $token): array
 {
     $body = json_encode(['preview_token' => $token], JSON_THROW_ON_ERROR);
@@ -223,6 +244,18 @@ try {
         'A preview token was accepted again after a successful commit.'
     );
 
+    // The registrar session must also be able to download a valid CSV export.
+    // The first row is deterministic even when the test database has no approved credits.
+    [$exportStatus, $exportBody] = registrarAuthGet(
+        'http://127.0.0.1:' . $port . '/api/export-registrar-credits.php',
+        $sessionA
+    );
+    registrarAuthAssert(
+        $exportStatus === 200 &&
+        str_starts_with($exportBody, "application_number,program_code,course_code,course_title,approved_credits,decision_at\n"),
+        'An authenticated registrar did not receive the expected approved-credit CSV header.'
+    );
+
     [$unauthorizedStatus, $unauthorizedBody] = registrarAuthRequest($url, $sessionUnauthorized, $csrfUnauthorized, $token);
     $unauthorizedJson = json_decode($unauthorizedBody, true);
     registrarAuthAssert(
@@ -230,7 +263,7 @@ try {
         'A non-registrar account was not denied before import processing.'
     );
 
-    fwrite(STDOUT, "PASS: authenticated registrar endpoint checks (failed-commit retry, cross-session rejection, non-registrar denial, and replay rejection after success).\n");
+    fwrite(STDOUT, "PASS: authenticated registrar endpoint checks (preview-token lifecycle, role denial, and authorized CSV export).\n");
 } catch (Throwable $error) {
     fwrite(STDERR, 'FAIL: authenticated registrar endpoint checks — ' . $error->getMessage() . "\n");
     $exitCode = 1;
