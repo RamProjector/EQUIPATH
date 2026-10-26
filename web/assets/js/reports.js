@@ -81,7 +81,9 @@
   }
 
   function formatLabel(value) {
-    return String(value).replaceAll("_", " ").replace(/[a-z]/g, letter => letter.toUpperCase());
+    return String(value).replaceAll("_", " ").split(" ")
+      .map(part => part ? part.charAt(0).toUpperCase() + part.slice(1) : part)
+      .join(" ");
   }
 
   function renderSummary(totals) {
