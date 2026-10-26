@@ -1,0 +1,48 @@
+# Proposal-to-Code Traceability Audit
+
+**Audit date:** 2026-10-26  
+**Repository:** `RamProjector/EQUIPATH`  
+**Purpose:** Compare the stated EquiPath proposal workflow and the initial SQL schema against executable repository code. This is a source-level inventory, not a claim that the application has passed user acceptance or production testing.
+
+## Status definitions
+
+- **Implemented foundation** — working code and focused automated tests exist for the described scope, but this does not imply the entire proposal feature is complete.
+- **Partial** — some API/service/security foundations exist; important workflow steps, UI, or end-to-end coverage remain.
+- **Schema only / not verified** — database structures exist, but this audit did not find a working end-user workflow for the feature.
+- **Not implemented in current repository** — no corresponding functional workflow was identified in the inspected application files.
+
+## Traceability matrix
+
+| Proposal / database capability | Repository evidence | Status | Remaining work before calling it complete |
+|---|---|---|---|
+| Account authentication and sessions | `web/api/authenticate.php`, `web/api/logout.php`, `web/api/csrf.php`; `Authenticator.php`, `SessionManager.php`, login-rate-limit migration and tests | **Implemented foundation** | Verify account provisioning, email verification, recovery, session expiry/revocation and the complete browser UI lifecycle. |
+| Role-based access control | `AccessControl.php`; `user_roles` and `roles` tables; authorization integration tests | **Partial** | Apply and test explicit permissions for each coordinator, evaluator, approver, registrar and administrator operation. No role should gain access merely because its name sounds privileged. |
+| Program, requirements and application periods | `academic_programs`, `program_requirements`, `application_periods` tables; draft service checks active programs and open/current periods | **Partial** | Add authorized maintenance screens/endpoints and tests for creating/updating programs, requirements and periods. |
+| Applicant application creation and tracking | `web/api/create-application.php`, `web/api/applications.php`, `ApplicationDraftService.php`; status history schema | **Partial** | Complete submission/finalization, status transitions, tracking details and full application UI. Current listing is not a complete case-management workflow. |
+| Portfolio/document upload | `web/api/upload-document.php`, `PortfolioDocumentService.php`, upload validation tests and HTTP guard test in PR #13 | **Partial** | Prove successful authenticated HTTP uploads, ownership denial through the endpoint, replacement/version lifecycle, rollback/cleanup, safe operational storage, and an approved malware/content-scanning control before real evidence is used. |
+| Private document download | `web/api/download-document.php`, document service and download integration tests | **Implemented foundation** | Complete end-to-end workflow testing, monitoring/retention controls and approved scanning/review safeguards. Do not treat PDF signature checks as malware scanning. |
+| Eligibility/document screening and correction requests | `screening_reviews`, document review status and application status fields in SQL | **Schema only / workflow not verified** | Authorized screening queue, requirement-by-requirement completeness checks, decisions/reasons, correction requests, status history, notifications and integration tests. |
+| Evaluator assignment and portfolio scoring | `evaluator_assignments`, `evaluation_rubrics`, `rubric_criteria`, `evaluation_scores` tables; assignment-aware access checks | **Partial foundation** | Assignment workflow, rubric configuration, score validation against criterion maxima/weights, feedback submission, evaluator UI, review locking and tests. |
+| Assessment scheduling, attendance and results | `assessment_events`, `assessment_results` tables | **Schema only / workflow not verified** | Scheduling/rescheduling/cancellation, attendance capture, result recording, authorization, applicant communication and tests. |
+| Credit recommendations | `credit_recommendations` table | **Schema only / workflow not verified** | Evaluator entry/edit/submit workflow, validation and review trail; keep recommendations separate from final approved credits. |
+| Accreditation decision and approved credits | `accreditation_decisions`, `accredited_credits` tables | **Schema only / workflow not verified** | Approver-only decision endpoint, valid state transitions, decision rationale, approved-credit validation, immutable history/superseding decisions and authorization tests. Final academic decisions remain with authorized ADFC personnel. |
+| Applicant notifications | `notifications` table | **Schema only / workflow not verified** | Notification creation tied to successful workflow transactions, inbox/read state, authorization and delivery strategy. No actual email/push delivery has been verified. |
+| Registrar/college record integration | `integration_batches`, `external_record_mappings` tables | **Schema only / workflow not verified** | Import/export contract, field mapping, validation, duplicate/conflict detection and resolution, retry/idempotency, batch summaries and tests. A mapping table alone is not integration. |
+| Reports | No report-generation workflow identified in the inspected current source tree | **Not implemented in current repository** | Define authorized report types, filters, aggregate queries, export format, privacy controls and tests. |
+| Audit trail | `audit_logs` table and document upload/download audit writes | **Partial** | Record and verify security-sensitive application/status, screening, evaluation, assessment, decision, role and integration actions; ensure audit records are access-controlled and failures are handled consistently. |
+| Backup and recovery | Development documentation warns that migrations are not backups | **Not implemented / not verified** | Document and rehearse database plus private-file backups, retention, access restrictions, restore verification and recovery objectives. |
+| Applicant/staff user interface | `web/public/index.php`, small CSS/JS shell; supplementary WinForms API connectivity screen | **Partial scaffold** | Build usable role-specific workspaces and complete workflows. A health page or API-connectivity screen is not the full proposal UI. |
+| Automated verification | GitHub Actions PHP/MySQL integration and desktop build jobs; focused auth, authorization, schema, draft and document tests | **Implemented foundation** | Add workflow-level tests for each proposal feature, security negative cases, failure/rollback paths and accessible UI behavior. CI passing alone does not mean the proposal is functionally complete. |
+
+## Recommended implementation order
+
+1. **Finish the document lifecycle test coverage**: authenticated upload success, cross-applicant denial, invalid requirement/status, upload failure cleanup and database/storage consistency. Keep PR #13 open until its current-head CI passes and the CodeRabbit cleanup finding is confirmed fixed.
+2. **Implement screening and correction requests**: explicit staff-role allow-list, transactionally update the screening record/application status/status history, write an audit event, and generate an in-app notification only when the transaction succeeds.
+3. **Implement evaluator assignment and rubric-based scoring**: enforce assignment ownership, criterion/rubric consistency, score bounds, submission locking and audit history.
+4. **Implement assessments and results**, then credit recommendations and the separate authorized accreditation decision workflow.
+5. **Implement notifications, registrar integration/conflict resolution and reports** with role checks and focused integration tests.
+6. **Finish operational controls and UI**: account lifecycle, backups/restore rehearsal, document scanning/retention, monitoring and end-to-end tests.
+
+## Important limitation
+
+This matrix is deliberately conservative. “Not verified” means the inspected repository evidence did not establish a complete working feature; it does not claim that every possible uninspected behavior is absent. Update each row only when a concrete code path and automated test demonstrate the stated behavior. The schema in `database/migrations/001_initial_schema.sql` is a data model, not proof of the corresponding UI, API, permissions or workflow.
