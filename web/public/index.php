@@ -109,6 +109,10 @@ declare(strict_types=1);
             <button id="close-applicant-documents" class="button secondary compact" type="button">Close</button>
           </div>
           <ul id="applicant-document-list" class="notification-list" aria-label="Uploaded application documents"></ul>
+          <div class="evaluation-actions">
+            <button id="submit-application-button" class="button primary" type="button">Submit application for screening</button>
+          </div>
+          <p id="submit-application-help" class="field-hint">Submission is available only after every required document has a current pending or accepted version. The server checks completeness again when you submit.</p>
           <form id="applicant-upload-form" class="assessment-form" enctype="multipart/form-data">
             <label for="applicant-document-type">Document requirement</label>
             <select id="applicant-document-type" required>
