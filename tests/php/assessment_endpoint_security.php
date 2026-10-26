@@ -73,7 +73,14 @@ try {
         throw new RuntimeException('HTTP server did not become ready for assessment endpoint tests.');
     }
 
-    foreach ([$scheduleUrl => 'create assessment', $resultUrl => 'record assessment result', $listUrl => 'assessment list', $candidatesUrl => 'assessment candidate list'] as $url => $label) {
+    foreach ([$scheduleUrl => 'create assessment', $resultUrl => 'record assessment result'] as $url => $label) {
+        [$status, $body] = requestAssessmentEndpoint($url, 'GET');
+        $json = json_decode($body, true);
+        if ($status !== 405 || ($json['error'] ?? null) !== 'method_not_allowed') {
+            throw new RuntimeException(ucfirst($label) . ' endpoint did not reject GET with HTTP 405.');
+        }
+    }
+    foreach ([$listUrl => 'assessment list', $candidatesUrl => 'assessment candidate list'] as $url => $label) {
         [$status, $body] = requestAssessmentEndpoint($url, 'POST');
         $json = json_decode($body, true);
         if ($status !== 405 || ($json['error'] ?? null) !== 'method_not_allowed') {
