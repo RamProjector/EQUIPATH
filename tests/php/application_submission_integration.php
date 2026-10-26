@@ -46,7 +46,7 @@ function submissionInsertDocument(mysqli $db, int $applicationId, int $userId, s
              original_filename, detected_mime_type, file_size_bytes, sha256, review_status)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
-    $insert->bind_param('iisisssi ss', $applicationId, $userId, $type, $version, $storageKey, $filename, $mime, $size, $digest, $status);
+    $insert->bind_param('iisisssiss', $applicationId, $userId, $type, $version, $storageKey, $filename, $mime, $size, $digest, $status);
     $insert->execute();
     $insert->close();
 }
