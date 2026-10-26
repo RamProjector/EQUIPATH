@@ -36,7 +36,7 @@ try {
 
     $assignmentQuery = $db->prepare(
         "SELECT ea.evaluator_assignment_id, ea.assignment_status,
-                a.application_id, a.application_status, a.program_id,
+                a.application_id, a.application_number, a.application_status, a.program_id,
                 p.program_code, p.program_name
          FROM evaluator_assignments ea
          INNER JOIN applications a ON a.application_id = ea.application_id
@@ -150,9 +150,7 @@ try {
         'assignment' => [
             'evaluator_assignment_id' => $assignmentId,
             'application_id' => (int) $assignment['application_id'],
-            'application_number' => (string) $assignment['program_code'] === ''
-                ? 'Application'
-                : (string) $assignment['application_id'],
+            'application_number' => (string) $assignment['application_number'],
             'program' => [
                 'code' => (string) $assignment['program_code'],
                 'name' => (string) $assignment['program_name'],
