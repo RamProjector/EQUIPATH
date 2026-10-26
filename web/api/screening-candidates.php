@@ -47,7 +47,24 @@ try {
                        )
                        AND d.review_status IN ('pending', 'accepted')
                        AND d.detected_mime_type = 'application/pdf'
-                   )) AS missing_required_document_count
+                   )) AS missing_required_document_count,
+                (SELECT COUNT(*)
+                 FROM program_requirements pr
+                 WHERE pr.program_id = a.program_id
+                   AND pr.is_active = TRUE AND pr.is_required = TRUE
+                   AND NOT EXISTS (
+                     SELECT 1 FROM application_documents d
+                     WHERE d.application_id = a.application_id
+                       AND d.document_type = pr.requirement_key
+                       AND d.version_number = (
+                         SELECT MAX(latest.version_number)
+                         FROM application_documents latest
+                         WHERE latest.application_id = d.application_id
+                           AND latest.document_type = d.document_type
+                       )
+                       AND d.review_status = 'accepted'
+                       AND d.detected_mime_type = 'application/pdf'
+                   )) AS unaccepted_required_document_count
          FROM applications a
          INNER JOIN users u ON u.user_id = a.applicant_user_id
          INNER JOIN academic_programs p ON p.program_id = a.program_id
@@ -74,6 +91,7 @@ try {
             ],
             'document_count' => (int) $row['document_count'],
             'missing_required_document_count' => (int) $row['missing_required_document_count'],
+            'unaccepted_required_document_count' => (int) $row['unaccepted_required_document_count'],
         ];
     }
     echo json_encode(['ok' => true, 'applications' => $applications, 'limit' => 100], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
