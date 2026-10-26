@@ -226,7 +226,7 @@
         setStatus("Each course code can only be recommended once for this assignment.", "error");
         return;
       }
-      if (!courseTitle || !/^d{1,4}(?:.d{1,2})?$/.test(credits) || Number(credits) < 0 || Number(credits) > 9999.99 || !rationale) {
+      if (!courseTitle || !/^\\d{1,4}(?:\\.\\d{1,2})?$/.test(credits) || Number(credits) < 0 || Number(credits) > 9999.99 || !rationale) {
         setStatus("Complete every course title, valid credit value and rationale.", "error");
         return;
       }
