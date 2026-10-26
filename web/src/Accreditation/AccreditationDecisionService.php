@@ -130,6 +130,9 @@ final class AccreditationDecisionService
             $currentDecisionId = $currentIds[0] ?? null;
             $applicationStatus = (string) $application['application_status'];
 
+            if ($decisions !== [] && $currentDecisionId === null) {
+                throw new DomainException('The application has decision history but no current decision; manual reconciliation is required.');
+            }
             if ($currentDecisionId === null) {
                 if ($supersedesDecisionId !== null || $applicationStatus !== 'awaiting_decision') {
                     throw new DomainException('A first decision requires an application awaiting decision and no existing decision.');
