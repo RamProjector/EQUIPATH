@@ -71,6 +71,12 @@ h1 span { color: var(--blue); }
 .criterion-card input:focus-visible, .criterion-card textarea:focus-visible { outline: 3px solid #a8d7e5; border-color: var(--blue); }
 .field-hint { color: var(--muted); font-size: .78rem; }
 .evaluation-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.assessment-form { display: grid; gap: 9px; max-width: 720px; margin-top: 18px; }
+.assessment-form label { margin-top: 8px; font-size: .88rem; font-weight: 700; }
+.assessment-form input, .assessment-form select, .assessment-form textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #b8c9d1; border-radius: 10px; background: white; color: var(--ink); }
+.assessment-form textarea { min-height: 84px; resize: vertical; line-height: 1.5; }
+.assessment-form input:focus-visible, .assessment-form select:focus-visible, .assessment-form textarea:focus-visible { outline: 3px solid #a8d7e5; border-color: var(--blue); }
+.assessment-result-summary { margin: 10px 0; padding: 10px 12px; border-radius: 10px; background: var(--mint); color: var(--blue-dark); font-size: .9rem; font-weight: 700; }
 .assignment-state { align-self: flex-start; padding: 7px 10px; border-radius: 999px; background: var(--mint); color: var(--success); font-size: .8rem; font-weight: 750; white-space: nowrap; }
 .rubric-warning { max-width: 300px; margin: 0; color: var(--danger); font-size: .84rem; line-height: 1.5; }
 .workflow { padding: 34px 0 78px; }

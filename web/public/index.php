@@ -11,6 +11,7 @@ declare(strict_types=1);
   <title>EquiPath | ADFC ETEEAP</title>
   <link rel="stylesheet" href="../assets/css/app.css">
   <script src="../assets/js/app.js" defer></script>
+  <script src="../assets/js/assessments.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -98,6 +99,67 @@ declare(strict_types=1);
               <button id="submit-evaluation" class="button primary" type="button">Submit evaluation</button>
             </div>
             <p id="evaluation-status" class="status-message" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
+
+      <section id="assessment-workspace" class="inbox" aria-labelledby="assessment-title" hidden>
+        <div class="inbox-heading">
+          <div>
+            <h3 id="assessment-title">Assessments</h3>
+            <p class="section-intro">View schedules and recorded results for applications you are authorized to access.</p>
+          </div>
+          <button id="refresh-assessments" class="button secondary compact" type="button">Refresh</button>
+        </div>
+        <p id="assessment-status" class="status-message" role="status" aria-live="polite"></p>
+        <ul id="assessment-list" class="notification-list" aria-label="Assessment schedule and results"></ul>
+
+        <div id="assessment-manager" class="evaluation-editor" hidden>
+          <h4>Schedule an assessment</h4>
+          <p class="section-intro">Only eligible applications, or applications whose assigned evaluations are all submitted, can be scheduled.</p>
+          <form id="assessment-form" class="assessment-form">
+            <label for="assessment-application">Application</label>
+            <select id="assessment-application" required>
+              <option value="">Choose an eligible application</option>
+            </select>
+            <label for="assessment-type">Assessment type</label>
+            <select id="assessment-type" required>
+              <option value="interview">Interview</option>
+              <option value="examination">Examination</option>
+              <option value="demonstration">Demonstration</option>
+              <option value="other">Other</option>
+            </select>
+            <label for="assessment-starts-at">Starts at</label>
+            <input id="assessment-starts-at" type="datetime-local" required>
+            <label for="assessment-ends-at">Ends at</label>
+            <input id="assessment-ends-at" type="datetime-local" required>
+            <label for="assessment-location">Location or meeting link (optional)</label>
+            <input id="assessment-location" type="text" maxlength="500">
+            <label for="assessment-notes">Staff notes (optional)</label>
+            <textarea id="assessment-notes" rows="3" maxlength="4000"></textarea>
+            <button id="schedule-assessment" class="button primary" type="submit">Schedule assessment</button>
+          </form>
+        </div>
+
+        <div id="assessment-result-editor" class="evaluation-editor" hidden>
+          <div class="inbox-heading">
+            <h4 id="assessment-result-title">Record assessment result</h4>
+            <button id="cancel-assessment-result" class="button secondary compact" type="button">Close</button>
+          </div>
+          <form id="assessment-result-form" class="assessment-form">
+            <input id="assessment-result-event-id" type="hidden">
+            <label for="assessment-outcome">Outcome</label>
+            <select id="assessment-outcome" required>
+              <option value="passed">Passed</option>
+              <option value="failed">Failed</option>
+              <option value="incomplete">Incomplete</option>
+              <option value="excused">Excused</option>
+            </select>
+            <label for="assessment-score">Score (optional)</label>
+            <input id="assessment-score" type="number" min="0" max="99999.99" step="0.01">
+            <label for="assessment-feedback">Feedback (optional)</label>
+            <textarea id="assessment-feedback" rows="3" maxlength="4000"></textarea>
+            <button id="save-assessment-result" class="button primary" type="submit">Record result</button>
           </form>
         </div>
       </section>
