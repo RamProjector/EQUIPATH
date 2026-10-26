@@ -73,7 +73,7 @@ try {
             'ends_at' => (string) $row['ends_at'],
             'location_or_link' => $row['location_or_link'] === null ? null : (string) $row['location_or_link'],
             'event_status' => (string) $row['event_status'],
-            'notes' => $row['notes'] === null ? null : (string) $row['notes'],
+            'notes' => ($canManage || $canViewAssigned) && $row['notes'] !== null ? (string) $row['notes'] : null,
             'program' => [
                 'code' => (string) $row['program_code'],
                 'name' => (string) $row['program_name'],
