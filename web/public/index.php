@@ -13,6 +13,7 @@ declare(strict_types=1);
   <script src="../assets/js/app.js" defer></script>
   <script src="../assets/js/assessments.js" defer></script>
   <script src="../assets/js/credit-recommendations.js" defer></script>
+  <script src="../assets/js/accreditation.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
