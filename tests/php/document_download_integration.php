@@ -106,9 +106,9 @@ try {
 
     $applicationNumber = 'DL-' . strtoupper(substr($suffix, 0, 12));
     $application = $db->prepare(
-        'INSERT INTO applications
+        "INSERT INTO applications
             (application_number, applicant_user_id, program_id, period_id, application_status, submitted_at)
-         VALUES (?, ?, ?, ?, 'submitted', CURRENT_TIMESTAMP)'
+         VALUES (?, ?, ?, ?, 'submitted', CURRENT_TIMESTAMP)"
     );
     $application->bind_param('siii', $applicationNumber, $userIds['owner'], $programId, $periodId);
     $application->execute();
