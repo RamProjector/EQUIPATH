@@ -1,0 +1,3 @@
+# Deny direct HTTP access to internal PHP classes and services.
+# PHP can still include these files from API endpoints; this rule blocks URL access.
+Require all denied
