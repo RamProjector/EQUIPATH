@@ -22,7 +22,9 @@ function runReadinessEndpoint(): array
     return ['status' => http_response_code(), 'body' => $decoded, 'raw' => $body];
 }
 
+$databaseEnvironment = [];
 foreach (['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'DB_PORT'] as $name) {
+    $databaseEnvironment[$name] = getenv($name);
     putenv($name);
 }
 
@@ -42,11 +44,11 @@ foreach (['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'DB_PORT'] as $name) {
     }
 }
 
-putenv('DB_HOST=' . (getenv('CI_DB_HOST') ?: '127.0.0.1'));
-putenv('DB_USER=' . (getenv('CI_DB_USER') ?: 'root'));
-putenv('DB_PASSWORD=' . (getenv('CI_DB_PASSWORD') ?: 'root'));
-putenv('DB_NAME=' . (getenv('CI_DB_NAME') ?: 'equipath_eteeap'));
-putenv('DB_PORT=' . (getenv('CI_DB_PORT') ?: '3306'));
+foreach ($databaseEnvironment as $name => $value) {
+    if ($value !== false) {
+        putenv($name . '=' . $value);
+    }
+}
 
 $connected = runReadinessEndpoint();
 if ($connected['status'] !== 200
