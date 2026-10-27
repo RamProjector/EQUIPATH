@@ -87,6 +87,14 @@ jobs:
           MYSQL_PWD: root
         run: mysql --host=127.0.0.1 --user=root equipath_eteeap < database/migrations/002_authentication_rate_limits.sql
 
+      - name: Run database readiness endpoint integration tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: equipath_eteeap
+        run: php tests/php/readiness_endpoint_integration.php
+
       - name: Run database integrity integration tests
         env:
           DB_HOST: 127.0.0.1
