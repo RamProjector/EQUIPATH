@@ -74,6 +74,9 @@ jobs:
       - name: Check database schema safety contract
         run: php tests/php/schema_contract.php
 
+      - name: Check deployment security contract
+        run: php tests/php/deployment_security_contract.php
+
       - name: Apply initial schema to clean MySQL service
         env:
           MYSQL_PWD: root
