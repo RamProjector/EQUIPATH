@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
 
-$endpoint = dirname(__DIR__, 2) . '/web/api/readiness.php';
-
 function runReadinessEndpoint(): array
 {
     http_response_code(200);
