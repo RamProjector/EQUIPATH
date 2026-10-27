@@ -81,7 +81,7 @@ The hosted engine must be tested directly. Passing local XAMPP tests alone is no
 
 The development guide identifies unfinished or partial workflows, including coordinator screening/assignment queues, rubric configuration, registrar integration, parts of evaluation/assessment/approver flows, and end-to-end authenticated multipart upload/rollback coverage. Malware scanning/content disarm, approved retention/deletion procedures, storage monitoring, and operational recovery also remain outstanding.
 
-The current GET /api/health.php endpoint does not perform a database connection check. A 200 OK response is not proof of a working database.
+The GET /api/health.php endpoint is a liveness response and deliberately does not connect to MySQL. Use GET /api/readiness.php for a minimal database readiness probe: it runs `SELECT 1`, returns HTTP 200 with `database: connected` on success, or HTTP 503 with `database: unavailable` on failure. It does not expose connection errors or credentials. Test this endpoint against the actual hosted database before accepting a deployment; CI coverage is not a substitute for a hosted smoke test.
 
 ## Rollback and cleanup
 
